@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>华容道游戏</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background: #f0f0f0;
+    }
+
+    h1 {
+      margin-top: 20px;
+    }
+
+    #board {
+      width: 300px;
+      height: 375px;
+      margin: 20px auto;
+      display: grid;
+      grid-template-columns: repeat(4, 75px);
+      grid-template-rows: repeat(5, 75px);
+      gap: 2px;
+      background-color: #444;
+      position: relative;
+    }
+
+    .piece {
+      background: #ffcc00;
+      border-radius: 5px;
+      font-size: 24px;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      transition: 0.2s ease;
+    }
+
+    .piece[data-size="2x2"] {
+      width: 150px;
+      height: 150px;
+    }
+
+    .piece[data-size="2x1"] {
+      width: 150px;
+      height: 75px;
+    }
+
+    .piece[data-size="1x2"] {
+      width: 75px;
+      height: 150px;
+    }
+
+    .piece[data-size="1x1"] {
+      width: 75px;
+      height: 75px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>华容道游戏</h1>
+<div id="board"></div>
+
+<script>
+  const board = document.getElementById("board");
+
+  // 定义初始布局（可移动的组件）
+  const pieces = [
+    { id: "曹操", x: 1, y: 0, w: 2, h: 2 },
+    { id: "关羽", x: 1, y: 2, w: 2, h: 1 },
+    { id: "张飞", x: 0, y: 0, w: 1, h: 2 },
+    { id: "赵云", x: 3, y: 0, w: 1, h: 2 },
+    { id: "马超", x: 0, y: 2, w: 1, h: 2 },
+    { id: "黄忠", x: 3, y: 2, w: 1, h: 2 },
+    { id: "卒1", x: 0, y: 4, w: 1, h: 1 },
+    { id: "卒2", x: 1, y: 3, w: 1, h: 1 },
+    { id: "卒3", x: 2, y: 3, w: 1, h: 1 },
+    { id: "卒4", x: 3, y: 4, w: 1, h: 1 }
+  ];
+
+  // 用于判断格子是否被占用
+  function createGridMap() {
+    const grid = Array.from({ length: 5 }, () => Array(4).fill(null));
+    for (let p of pieces) {
+      for (let dx = 0; dx < p.w; dx++) {
+        for (let dy = 0; dy < p.h; dy++) {
+          grid[p.y + dy][p.x + dx] = p.id;
+        }
+      }
+    }
+    return grid;
+  }
+
+  // 渲染所有块
+  function render() {
+    board.innerHTML = "";
+    for (let p of pieces) {
+      const el = document.createElement("div");
+      el.className = "piece";
+      el.innerText = p.id;
+      el.dataset.size = `${p.w}x${p.h}`;
+      el.style.left = `${p.x * 75}px`;
+      el.style.top = `${p.y * 75}px`;
+      el.draggable = true;
+
+      // 拖动事件
+      el.addEventListener("dragstart", e => {
+        e.dataTransfer.setData("text/plain", p.id);
+      });
+
+      board.appendChild(el);
+    }
+  }
+
+  // 获取 piece 对象
+  function getPieceById(id) {
+    return pieces.find(p => p.id === id);
+  }
+
+  // 移动逻辑
+  board.addEventListener("dragover", e => {
+    e.preventDefault();
+  });
+
+  board.addEventListener("drop", e => {
+    const id = e.dataTransfer.getData("text/plain");
+    const piece = getPieceById(id);
+    const rect = board.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left) / 75);
+    const y = Math.floor((e.clientY - rect.top) / 75);
+
+    if (canMoveTo(piece, x, y)) {
+      piece.x = x;
+      piece.y = y;
+      render();
+
+      if (piece.id === "曹操" && piece.x === 1 && piece.y === 3) {
+        alert("恭喜过关！");
+      }
+    }
+  });
+
+  // 判断是否能移动
+  function canMoveTo(piece, newX, newY) {
+    const grid = createGridMap();
+    // 清除当前 piece 占位
+    for (let dx = 0; dx < piece.w; dx++) {
+      for (let dy = 0; dy < piece.h; dy++) {
+        grid[piece.y + dy][piece.x + dx] = null;
+      }
+    }
+
+    for (let dx = 0; dx < piece.w; dx++) {
+      for (let dy = 0; dy < piece.h; dy++) {
+        const x = newX + dx;
+        const y = newY + dy;
+        if (x < 0 || y < 0 || x >= 4 || y >= 5) return false;
+        if (grid[y][x]) return false;
+      }
+    }
+
+    return true;
+  }
+
+  render();
+</script>
+
+</body>
+</html>
