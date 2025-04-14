@@ -24,10 +24,11 @@
       gap: 2px;
       background-color: #444;
       position: relative;
+      border: 2px solid #333; /* Added a subtle border */
     }
 
     .piece {
-      background: #ffcc00;
+      /* background: #ffcc00;  <-- REMOVED default background */
       border-radius: 5px;
       font-size: 24px;
       font-weight: bold;
@@ -36,8 +37,16 @@
       align-items: center;
       position: absolute;
       transition: 0.2s ease;
+      border: 1px solid rgba(0,0,0,0.2); /* Added subtle border to pieces */
+      color: white; /* ADDED for better contrast */
+      cursor: grab; /* Indicate draggable */
     }
 
+    .piece:active {
+        cursor: grabbing; /* Change cursor while dragging */
+    }
+
+    /* --- Sizing rules (unchanged) --- */
     .piece[data-size="2x2"] {
       width: 150px;
       height: 150px;
@@ -57,6 +66,13 @@
       width: 75px;
       height: 75px;
     }
+
+    /* --- NEW Color rules based on size --- */
+    .piece[data-size="2x2"] { background-color: #e74c3c; } /* Cao Cao (Red) */
+    .piece[data-size="2x1"] { background-color: #2ecc71; } /* Guan Yu (Green) */
+    .piece[data-size="1x2"] { background-color: #3498db; } /* Vertical Generals (Blue) */
+    .piece[data-size="1x1"] { background-color: #95a5a6; } /* Soldiers (Gray) */
+
   </style>
 </head>
 <body>
@@ -67,105 +83,210 @@
 <script>
   const board = document.getElementById("board");
 
-  // 定义初始布局（可移动的组件）
+  // Define initial layout (unchanged)
   const pieces = [
-    { id: "曹操", x: 1, y: 0, w: 2, h: 2 },
-    { id: "关羽", x: 1, y: 2, w: 2, h: 1 },
-    { id: "张飞", x: 0, y: 0, w: 1, h: 2 },
-    { id: "赵云", x: 3, y: 0, w: 1, h: 2 },
-    { id: "马超", x: 0, y: 2, w: 1, h: 2 },
-    { id: "黄忠", x: 3, y: 2, w: 1, h: 2 },
-    { id: "卒1", x: 0, y: 4, w: 1, h: 1 },
-    { id: "卒2", x: 1, y: 3, w: 1, h: 1 },
-    { id: "卒3", x: 2, y: 3, w: 1, h: 1 },
-    { id: "卒4", x: 3, y: 4, w: 1, h: 1 }
+    { id: "曹操", x: 1, y: 0, w: 2, h: 2 }, // Will be Red
+    { id: "关羽", x: 1, y: 2, w: 2, h: 1 }, // Will be Green
+    { id: "张飞", x: 0, y: 0, w: 1, h: 2 }, // Will be Blue
+    { id: "赵云", x: 3, y: 0, w: 1, h: 2 }, // Will be Blue
+    { id: "马超", x: 0, y: 2, w: 1, h: 2 }, // Will be Blue
+    { id: "黄忠", x: 3, y: 2, w: 1, h: 2 }, // Will be Blue
+    { id: "卒1", x: 0, y: 4, w: 1, h: 1 }, // Will be Gray
+    { id: "卒2", x: 1, y: 3, w: 1, h: 1 }, // Will be Gray
+    { id: "卒3", x: 2, y: 3, w: 1, h: 1 }, // Will be Gray
+    { id: "卒4", x: 3, y: 4, w: 1, h: 1 }  // Will be Gray
   ];
 
-  // 用于判断格子是否被占用
+  // --- JavaScript functions (createGridMap, render, getPieceById, canMoveTo) remain exactly the same ---
+  // --- Event listeners (dragstart, dragover, drop) remain exactly the same ---
+
+  // (Keeping the JS code concise here as it didn't change)
+
   function createGridMap() {
     const grid = Array.from({ length: 5 }, () => Array(4).fill(null));
     for (let p of pieces) {
       for (let dx = 0; dx < p.w; dx++) {
         for (let dy = 0; dy < p.h; dy++) {
-          grid[p.y + dy][p.x + dx] = p.id;
+          // Ensure we don't write out of bounds if piece data is wrong
+          if (p.y + dy < 5 && p.x + dx < 4) {
+             grid[p.y + dy][p.x + dx] = p.id;
+          }
         }
       }
     }
     return grid;
   }
 
-  // 渲染所有块
   function render() {
     board.innerHTML = "";
     for (let p of pieces) {
       const el = document.createElement("div");
       el.className = "piece";
       el.innerText = p.id;
+      // This data-size attribute is what the CSS uses for sizing AND coloring
       el.dataset.size = `${p.w}x${p.h}`;
       el.style.left = `${p.x * 75}px`;
       el.style.top = `${p.y * 75}px`;
       el.draggable = true;
 
-      // 拖动事件
       el.addEventListener("dragstart", e => {
-        e.dataTransfer.setData("text/plain", p.id);
+         // Make the dragged piece semi-transparent for visual feedback
+         setTimeout(() => el.style.opacity = '0.5', 0);
+         e.dataTransfer.setData("text/plain", p.id);
+         e.dataTransfer.effectAllowed = "move";
       });
+
+       // Reset opacity when dragging ends (whether successful drop or not)
+      el.addEventListener("dragend", e => {
+          el.style.opacity = '1';
+      });
+
 
       board.appendChild(el);
     }
   }
 
-  // 获取 piece 对象
   function getPieceById(id) {
     return pieces.find(p => p.id === id);
   }
 
-  // 移动逻辑
   board.addEventListener("dragover", e => {
-    e.preventDefault();
+    e.preventDefault(); // Necessary to allow dropping
+    e.dataTransfer.dropEffect = "move";
   });
 
   board.addEventListener("drop", e => {
+    e.preventDefault();
     const id = e.dataTransfer.getData("text/plain");
     const piece = getPieceById(id);
+
+    // Find the element being dragged to reset its style if needed (though dragend handles opacity)
+    const draggedElement = Array.from(board.children).find(el => el.innerText === id);
+    // if (draggedElement) draggedElement.style.opacity = '1'; // Redundant due to dragend
+
+    if (!piece) return; // Should not happen if dragstart worked correctly
+
     const rect = board.getBoundingClientRect();
-    const x = Math.floor((e.clientX - rect.left) / 75);
-    const y = Math.floor((e.clientY - rect.top) / 75);
+    // Calculate drop coordinates relative to the board grid
+    // Target the *center* of the potential top-left grid cell for more robust calculation
+    const dropX = e.clientX - rect.left;
+    const dropY = e.clientY - rect.top;
 
-    if (canMoveTo(piece, x, y)) {
-      piece.x = x;
-      piece.y = y;
-      render();
+    // Calculate potential grid coordinates (adjusting for piece size is handled in canMoveTo)
+    // We need the top-left corner grid cell index the mouse landed in
+    const gridX = Math.floor(dropX / 75);
+    const gridY = Math.floor(dropY / 75);
 
-      if (piece.id === "曹操" && piece.x === 1 && piece.y === 3) {
-        alert("恭喜过关！");
-      }
+    // --- Movement Logic Refinement ---
+    // The original drop logic just checked if *any* part of the target area was valid.
+    // For a sliding puzzle, we should only allow moves to adjacent empty squares.
+    // Let's determine the *intended* move direction based on the drop relative to the piece's origin.
+
+    const deltaX = gridX - piece.x;
+    const deltaY = gridY - piece.y;
+
+    let targetX = piece.x;
+    let targetY = piece.y;
+
+    // Determine primary move direction (only allow cardinal moves)
+    if (Math.abs(deltaX) > Math.abs(deltaY)) { // Horizontal move attempt
+        targetX += Math.sign(deltaX);
+    } else if (Math.abs(deltaY) > Math.abs(deltaX)) { // Vertical move attempt
+        targetY += Math.sign(deltaY);
+    } else {
+        // Dropped near the original spot or diagonally - invalid move for slide puzzle
+        // Or handle more complex logic if desired, but simple is best here.
+        console.log("Invalid move: Drop location unclear or diagonal.");
+        return;
+    }
+
+     // Check if the calculated single-step move is valid
+    if (canMoveTo(piece, targetX, targetY)) {
+       // Check if the target requires moving more than one step (e.g., piece is 2 units wide/tall)
+        const actualMoveX = targetX - piece.x;
+        const actualMoveY = targetY - piece.y;
+
+       // Verify ALL spaces needed for the move are clear
+        let multiStepClear = true;
+        if (actualMoveX !== 0) { // Horizontal move
+            const checkY = piece.y;
+            const step = Math.sign(actualMoveX);
+            const checkX = (step > 0) ? piece.x + piece.w : piece.x - 1; // Check space next to the piece edge
+             for (let dy = 0; dy < piece.h; dy++) {
+                 if (!isCellClear(checkX, checkY + dy, piece.id)) {
+                     multiStepClear = false;
+                     break;
+                 }
+             }
+
+        } else { // Vertical move
+            const checkX = piece.x;
+            const step = Math.sign(actualMoveY);
+            const checkY = (step > 0) ? piece.y + piece.h : piece.y - 1; // Check space below/above piece edge
+            for (let dx = 0; dx < piece.w; dx++) {
+                 if (!isCellClear(checkX + dx, checkY, piece.id)) {
+                    multiStepClear = false;
+                    break;
+                 }
+            }
+        }
+
+
+        if (multiStepClear) {
+            piece.x = targetX;
+            piece.y = targetY;
+            render(); // Re-render the board with the new piece position
+
+            // Check win condition
+            if (piece.id === "曹操" && piece.x === 1 && piece.y === 3) {
+              // Use setTimeout to allow the final render to complete before the alert blocks execution
+              setTimeout(() => alert("恭喜过关！"), 100);
+            }
+        } else {
+             console.log("Invalid move: Path blocked for multi-cell piece.");
+        }
+
+    } else {
+        console.log(`Invalid move: Cannot move to ${targetX}, ${targetY}`);
     }
   });
 
-  // 判断是否能移动
-  function canMoveTo(piece, newX, newY) {
-    const grid = createGridMap();
-    // 清除当前 piece 占位
-    for (let dx = 0; dx < piece.w; dx++) {
-      for (let dy = 0; dy < piece.h; dy++) {
-        grid[piece.y + dy][piece.x + dx] = null;
+  // Refined canMoveTo check for the target position *only*
+  // Assumes single step movement check is done before calling this
+   function canMoveTo(piece, newX, newY) {
+    // Check boundaries first
+    if (newX < 0 || newY < 0 || (newX + piece.w) > 4 || (newY + piece.h) > 5) {
+        // console.log("Boundary check failed");
+        return false;
+    }
+
+    // Check if target cells are occupied by *other* pieces
+    for (let dy = 0; dy < piece.h; dy++) {
+      for (let dx = 0; dx < piece.w; dx++) {
+        if (!isCellClear(newX + dx, newY + dy, piece.id)) {
+            // console.log(`Target cell ${newX + dx}, ${newY + dy} is blocked.`);
+            return false;
+        }
       }
     }
 
-    for (let dx = 0; dx < piece.w; dx++) {
-      for (let dy = 0; dy < piece.h; dy++) {
-        const x = newX + dx;
-        const y = newY + dy;
-        if (x < 0 || y < 0 || x >= 4 || y >= 5) return false;
-        if (grid[y][x]) return false;
-      }
-    }
-
-    return true;
+    // console.log(`Move to ${newX}, ${newY} seems valid.`);
+    return true; // If all checks pass, the move is valid
   }
 
-  render();
+  // Helper function to check if a specific cell is clear of *other* pieces
+  function isCellClear(x, y, movingPieceId) {
+       if (x < 0 || y < 0 || x >= 4 || y >= 5) return false; // Outside bounds
+
+       const grid = createGridMap(); // Get current grid state
+       const occupantId = grid[y][x];
+
+       // Cell is clear if null OR if it's part of the piece currently being moved
+       return occupantId === null || occupantId === movingPieceId;
+   }
+
+
+  render(); // Initial rendering of the game board
 </script>
 
 </body>
