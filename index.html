@@ -14,12 +14,12 @@
     }
     h1 { margin-top: 20px; }
     #board {
-      width: 300px;
-      height: 375px;
+      width: 360px;
+      height: 450px;
       margin: 20px auto;
       display: grid;
-      grid-template-columns: repeat(4, 75px);
-      grid-template-rows: repeat(5, 75px);
+      grid-template-columns: repeat(4, 90px);
+      grid-template-rows: repeat(5, 90px);
       gap: 2px;
       background-color: #444;
       position: relative;
@@ -51,10 +51,10 @@
     .piece:active { cursor: grabbing; }
 
     /* Sizing rules */
-    .piece[data-size="2x2"] { width: 150px; height: 150px; }
-    .piece[data-size="2x1"] { width: 150px; height: 75px; }
-    .piece[data-size="1x2"] { width: 75px; height: 150px; }
-    .piece[data-size="1x1"] { width: 75px; height: 75px; }
+    .piece[data-size="2x2"] { width: 180px; height: 180px; }
+    .piece[data-size="2x1"] { width: 180px; height: 90px; }
+    .piece[data-size="1x2"] { width: 90px; height: 180px; }
+    .piece[data-size="1x1"] { width: 90px; height: 90px; }
 
     /* Color rules */
     .piece[data-size="2x2"] { background-color: #e74c3c; }
@@ -86,7 +86,7 @@
   const board = document.getElementById("board");
   const solveButton = document.getElementById("solveButton");
   const resetButton = document.getElementById("resetButton");
-  const gridSize = 75;
+  const gridSize = 90;
 
   // --- Store Initial State ---
   const initialPieces = [
