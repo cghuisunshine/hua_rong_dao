@@ -2,18 +2,17 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>华容道游戏</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>华容道游戏 (With Solution Demo)</title>
   <style>
+    /* --- Existing styles from previous version --- */
     body {
       font-family: sans-serif;
       text-align: center;
       background: #f0f0f0;
+      overscroll-behavior-y: contain;
     }
-
-    h1 {
-      margin-top: 20px;
-    }
-
+    h1 { margin-top: 20px; }
     #board {
       width: 300px;
       height: 375px;
@@ -24,54 +23,52 @@
       gap: 2px;
       background-color: #444;
       position: relative;
-      border: 2px solid #333; /* Added a subtle border */
+      border: 2px solid #333;
+      user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;
+      touch-action: none;
     }
-
+     #controls { /* ADDED: Container for buttons */
+        margin-top: 15px;
+     }
+     button { /* ADDED: Basic button styling */
+        padding: 8px 15px;
+        font-size: 16px;
+        cursor: pointer;
+        margin: 0 5px;
+     }
+     button:disabled { /* Style for disabled button */
+         cursor: not-allowed;
+         opacity: 0.6;
+     }
     .piece {
-      /* background: #ffcc00;  <-- REMOVED default background */
-      border-radius: 5px;
-      font-size: 24px;
-      font-weight: bold;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      position: absolute;
-      transition: 0.2s ease;
-      border: 1px solid rgba(0,0,0,0.2); /* Added subtle border to pieces */
-      color: white; /* ADDED for better contrast */
-      cursor: grab; /* Indicate draggable */
+      border-radius: 5px; font-size: 24px; font-weight: bold;
+      display: flex; justify-content: center; align-items: center;
+      position: absolute; transition: transform 0.1s ease-out, top 0.3s ease, left 0.3s ease; /* Added top/left transition */
+      border: 1px solid rgba(0,0,0,0.2); color: white; cursor: grab;
+      pointer-events: auto; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;
     }
+    .piece.dragging { opacity: 0.7; transform: scale(1.05); z-index: 10; }
+    .piece:active { cursor: grabbing; }
 
-    .piece:active {
-        cursor: grabbing; /* Change cursor while dragging */
+    /* Sizing rules */
+    .piece[data-size="2x2"] { width: 150px; height: 150px; }
+    .piece[data-size="2x1"] { width: 150px; height: 75px; }
+    .piece[data-size="1x2"] { width: 75px; height: 150px; }
+    .piece[data-size="1x1"] { width: 75px; height: 75px; }
+
+    /* Color rules */
+    .piece[data-size="2x2"] { background-color: #e74c3c; }
+    .piece[data-size="2x1"] { background-color: #2ecc71; }
+    .piece[data-size="1x2"] { background-color: #3498db; }
+    .piece[data-size="1x1"] { background-color: #95a5a6; }
+
+    #board.solving { /* ADDED: Style to indicate solving state */
+        cursor: wait;
     }
-
-    /* --- Sizing rules (unchanged) --- */
-    .piece[data-size="2x2"] {
-      width: 150px;
-      height: 150px;
+    #board.solving .piece {
+        pointer-events: none; /* Disable interaction with pieces */
+        cursor: wait;
     }
-
-    .piece[data-size="2x1"] {
-      width: 150px;
-      height: 75px;
-    }
-
-    .piece[data-size="1x2"] {
-      width: 75px;
-      height: 150px;
-    }
-
-    .piece[data-size="1x1"] {
-      width: 75px;
-      height: 75px;
-    }
-
-    /* --- NEW Color rules based on size --- */
-    .piece[data-size="2x2"] { background-color: #e74c3c; } /* Cao Cao (Red) */
-    .piece[data-size="2x1"] { background-color: #2ecc71; } /* Guan Yu (Green) */
-    .piece[data-size="1x2"] { background-color: #3498db; } /* Vertical Generals (Blue) */
-    .piece[data-size="1x1"] { background-color: #95a5a6; } /* Soldiers (Gray) */
 
   </style>
 </head>
@@ -80,213 +77,382 @@
 <h1>华容道游戏</h1>
 <div id="board"></div>
 
+<div id="controls">
+    <button id="resetButton">Reset</button>
+    <button id="solveButton">Show Solution (Demo)</button>
+</div>
+
 <script>
   const board = document.getElementById("board");
+  const solveButton = document.getElementById("solveButton");
+  const resetButton = document.getElementById("resetButton");
+  const gridSize = 75;
 
-  // Define initial layout (unchanged)
-  const pieces = [
-    { id: "曹操", x: 1, y: 0, w: 2, h: 2 }, // Will be Red
-    { id: "关羽", x: 1, y: 2, w: 2, h: 1 }, // Will be Green
-    { id: "张飞", x: 0, y: 0, w: 1, h: 2 }, // Will be Blue
-    { id: "赵云", x: 3, y: 0, w: 1, h: 2 }, // Will be Blue
-    { id: "马超", x: 0, y: 2, w: 1, h: 2 }, // Will be Blue
-    { id: "黄忠", x: 3, y: 2, w: 1, h: 2 }, // Will be Blue
-    { id: "卒1", x: 0, y: 4, w: 1, h: 1 }, // Will be Gray
-    { id: "卒2", x: 1, y: 3, w: 1, h: 1 }, // Will be Gray
-    { id: "卒3", x: 2, y: 3, w: 1, h: 1 }, // Will be Gray
-    { id: "卒4", x: 3, y: 4, w: 1, h: 1 }  // Will be Gray
+  // --- Store Initial State ---
+  const initialPieces = [
+    { id: "曹操", x: 1, y: 0, w: 2, h: 2 },
+    { id: "关羽", x: 1, y: 2, w: 2, h: 1 },
+    { id: "张飞", x: 0, y: 0, w: 1, h: 2 },
+    { id: "赵云", x: 3, y: 0, w: 1, h: 2 },
+    { id: "马超", x: 0, y: 2, w: 1, h: 2 },
+    { id: "黄忠", x: 3, y: 2, w: 1, h: 2 },
+    { id: "卒1", x: 0, y: 4, w: 1, h: 1 },
+    { id: "卒2", x: 1, y: 3, w: 1, h: 1 },
+    { id: "卒3", x: 2, y: 3, w: 1, h: 1 },
+    { id: "卒4", x: 3, y: 4, w: 1, h: 1 }
   ];
 
-  // --- JavaScript functions (createGridMap, render, getPieceById, canMoveTo) remain exactly the same ---
-  // --- Event listeners (dragstart, dragover, drop) remain exactly the same ---
+  // --- Game State (Mutable) ---
+  // Use structuredClone for a deep copy to prevent mutation of initialPieces
+  let pieces = structuredClone(initialPieces);
 
-  // (Keeping the JS code concise here as it didn't change)
+  // --- ADDED: Solution Sequence (Short Demo - Replace with full 81+ step solution) ---
+  const solutionSequence = [
+    { id: "卒2", x: 1, y: 4 }, // Soldier 2 Down
+    { id: "卒3", x: 2, y: 4 }, // Soldier 3 Down
+    { id: "关羽", x: 1, y: 3 }, // Guan Yu Down
+    { id: "马超", x: 1, y: 2 }, // Ma Chao Right
+    { id: "黄忠", x: 2, y: 2 }, // Huang Zhong Left
+    { id: "赵云", x: 3, y: 1 }, // Zhao Yun Down
+    { id: "张飞", x: 0, y: 1 }, // Zhang Fei Down
+    { id: "曹操", x: 1, y: 1 }, // Cao Cao Down
+    // ... MANY MORE STEPS NEEDED FOR A FULL SOLUTION ...
+  ];
 
-  function createGridMap() {
-    const grid = Array.from({ length: 5 }, () => Array(4).fill(null));
-    for (let p of pieces) {
-      for (let dx = 0; dx < p.w; dx++) {
-        for (let dy = 0; dy < p.h; dy++) {
-          // Ensure we don't write out of bounds if piece data is wrong
-          if (p.y + dy < 5 && p.x + dx < 4) {
-             grid[p.y + dy][p.x + dx] = p.id;
+  // --- State Flags ---
+  let isDragging = false;
+  let isSolving = false; // Flag to indicate if solution is playing
+  let solutionTimeoutId = null; // To store the timeout ID for cancellation
+
+  // --- Touch State Variables ---
+  let activePieceElement = null;
+  let activePieceData = null;
+  let touchStartX = 0, touchStartY = 0;
+  let pieceStartGridX = 0, pieceStartGridY = 0;
+
+  // --- Helper Functions ---
+  function getPieceById(id) { return pieces.find(p => p.id === id); }
+  function getElementByPieceId(id) { return Array.from(board.children).find(el => el.innerText === id); }
+  function createGridMap() { /* ... (same as before) ... */
+      const grid = Array.from({ length: 5 }, () => Array(4).fill(null));
+      for (let p of pieces) {
+          for (let dx = 0; dx < p.w; dx++) {
+              for (let dy = 0; dy < p.h; dy++) {
+                  if (p.y + dy < 5 && p.x + dx < 4) {
+                      grid[p.y + dy][p.x + dx] = p.id;
+                  }
+              }
           }
-        }
       }
-    }
-    return grid;
+      return grid;
+  }
+  function isCellClear(x, y, movingPieceId) { /* ... (same as before) ... */
+      if (x < 0 || y < 0 || x >= 4 || y >= 5) return false;
+       const grid = createGridMap();
+       const occupantId = grid[y][x];
+       return occupantId === null || occupantId === movingPieceId;
+  }
+  function canMoveTo(piece, newX, newY) { /* ... (same as before, includes path check) ... */
+       if (!piece) return false;
+        // 1. Boundary Check
+        if (newX < 0 || newY < 0 || (newX + piece.w) > 4 || (newY + piece.h) > 5) return false;
+
+        // 2. Check target area for obstructions
+        for (let dy = 0; dy < piece.h; dy++) {
+            for (let dx = 0; dx < piece.w; dx++) {
+                if (!isCellClear(newX + dx, newY + dy, piece.id)) return false;
+            }
+        }
+
+        // 3. Check path (basic single step check)
+        const deltaX = newX - piece.x;
+        const deltaY = newY - piece.y;
+        if (Math.abs(deltaX) + Math.abs(deltaY) !== 1) {
+             // Allow non-single step moves for now, but log it
+             // console.warn("Move is not a single adjacent step");
+             // You might want return false here for strict sliding puzzle rules
+        }
+        // More detailed path check (optional but better for true sliding)
+        if (deltaX > 0) { // Moving right
+             for(let dy = 0; dy < piece.h; dy++) if (!isCellClear(piece.x + piece.w, piece.y + dy, piece.id)) return false;
+        } else if (deltaX < 0) { // Moving left
+             for(let dy = 0; dy < piece.h; dy++) if (!isCellClear(piece.x - 1, piece.y + dy, piece.id)) return false;
+        } else if (deltaY > 0) { // Moving down
+             for(let dx = 0; dx < piece.w; dx++) if (!isCellClear(piece.x + dx, piece.y + piece.h, piece.id)) return false;
+        } else if (deltaY < 0) { // Moving up
+            for(let dx = 0; dx < piece.w; dx++) if (!isCellClear(piece.x + dx, piece.y - 1, piece.id)) return false;
+        }
+       return true;
   }
 
+  // --- Rendering ---
   function render() {
     board.innerHTML = "";
-    for (let p of pieces) {
+    pieces.forEach(p => {
       const el = document.createElement("div");
       el.className = "piece";
       el.innerText = p.id;
-      // This data-size attribute is what the CSS uses for sizing AND coloring
       el.dataset.size = `${p.w}x${p.h}`;
-      el.style.left = `${p.x * 75}px`;
-      el.style.top = `${p.y * 75}px`;
-      el.draggable = true;
+      // Use styles for positioning to leverage CSS transitions
+      el.style.width = `${p.w * gridSize}px`;
+      el.style.height = `${p.h * gridSize}px`;
+      el.style.left = `${p.x * gridSize}px`;
+      el.style.top = `${p.y * gridSize}px`;
+      el.style.transform = ''; // Reset transform
 
-      el.addEventListener("dragstart", e => {
-         // Make the dragged piece semi-transparent for visual feedback
-         setTimeout(() => el.style.opacity = '0.5', 0);
-         e.dataTransfer.setData("text/plain", p.id);
-         e.dataTransfer.effectAllowed = "move";
-      });
-
-       // Reset opacity when dragging ends (whether successful drop or not)
-      el.addEventListener("dragend", e => {
-          el.style.opacity = '1';
-      });
-
+      // Draggable only if not solving
+      el.draggable = !isSolving;
 
       board.appendChild(el);
+    });
+    // Update board state class
+    if (isSolving) {
+        board.classList.add('solving');
+    } else {
+        board.classList.remove('solving');
     }
   }
 
-  function getPieceById(id) {
-    return pieces.find(p => p.id === id);
+  // --- Move Execution ---
+  function executeMove(piece, newX, newY) {
+    if (!piece) {
+        console.error("Attempted to move null piece");
+        return false;
+    }
+    if (canMoveTo(piece, newX, newY)) {
+      piece.x = newX;
+      piece.y = newY;
+      render(); // Re-render the board visually
+      // Check win condition (only really relevant after manual play or full solution)
+      if (piece.id === "曹操" && piece.x === 1 && piece.y === 3) {
+          if (isSolving) { // If solved via automation
+               stopSolution(); // Stop further steps if any
+               setTimeout(() => alert("Solution Complete! (Reached target state)"), 100);
+          } else {
+               setTimeout(() => alert("恭喜过关！"), 100);
+          }
+      }
+      return true; // Move successful
+    } else {
+        console.warn(`Invalid move attempt: ${piece.id} to (${newX}, ${newY})`);
+        return false; // Move failed
+    }
   }
 
-  board.addEventListener("dragover", e => {
-    e.preventDefault(); // Necessary to allow dropping
-    e.dataTransfer.dropEffect = "move";
-  });
+  // --- ADDED: Reset Function ---
+  function resetBoard() {
+      console.log("Resetting board...");
+      stopSolution(); // Stop solution playback if running
+      // Deep copy initial state back into the active state
+      pieces = structuredClone(initialPieces);
+      render(); // Render the reset state
+      solveButton.disabled = false; // Re-enable solve button
+      resetButton.disabled = false; // Ensure reset is enabled
+  }
 
-  board.addEventListener("drop", e => {
-    e.preventDefault();
-    const id = e.dataTransfer.getData("text/plain");
-    const piece = getPieceById(id);
+  // --- ADDED: Solution Playback Logic ---
+  function playSolutionStep(stepIndex) {
+      if (!isSolving || stepIndex >= solutionSequence.length) {
+          console.log("Solution playback finished or stopped.");
+          stopSolution(); // Ensure cleanup
+          // Check if puzzle is actually solved
+          const caoCao = getPieceById("曹操");
+          if (caoCao && caoCao.x === 1 && caoCao.y === 3) {
+               console.log("Solution sequence seems to have led to the goal!");
+          } else {
+               console.warn("Solution sequence ended, but Cao Cao not in final position.");
+          }
+          return;
+      }
 
-    // Find the element being dragged to reset its style if needed (though dragend handles opacity)
-    const draggedElement = Array.from(board.children).find(el => el.innerText === id);
-    // if (draggedElement) draggedElement.style.opacity = '1'; // Redundant due to dragend
+      const move = solutionSequence[stepIndex];
+      const pieceToMove = getPieceById(move.id);
 
-    if (!piece) return; // Should not happen if dragstart worked correctly
+      console.log(`Step ${stepIndex + 1}: Moving ${move.id} to (${move.x}, ${move.y})`);
 
-    const rect = board.getBoundingClientRect();
-    // Calculate drop coordinates relative to the board grid
-    // Target the *center* of the potential top-left grid cell for more robust calculation
-    const dropX = e.clientX - rect.left;
-    const dropY = e.clientY - rect.top;
+      if (!executeMove(pieceToMove, move.x, move.y)) {
+            console.error(`Solution Error: Invalid move at step ${stepIndex + 1}. Halting.`);
+            stopSolution();
+            alert(`Solution Error: Invalid move at step ${stepIndex + 1} for ${move.id}. Playback stopped.`);
+            return;
+      }
 
-    // Calculate potential grid coordinates (adjusting for piece size is handled in canMoveTo)
-    // We need the top-left corner grid cell index the mouse landed in
-    const gridX = Math.floor(dropX / 75);
-    const gridY = Math.floor(dropY / 75);
+      // Schedule the next step after 1 second
+      solutionTimeoutId = setTimeout(() => {
+          playSolutionStep(stepIndex + 1);
+      }, 1000); // 1000ms = 1 second interval
+  }
 
-    // --- Movement Logic Refinement ---
-    // The original drop logic just checked if *any* part of the target area was valid.
-    // For a sliding puzzle, we should only allow moves to adjacent empty squares.
-    // Let's determine the *intended* move direction based on the drop relative to the piece's origin.
+  function startSolution() {
+      if (isSolving) return; // Already solving
 
-    const deltaX = gridX - piece.x;
-    const deltaY = gridY - piece.y;
+      console.log("Starting solution playback...");
+      resetBoard(); // Start from the initial configuration
 
-    let targetX = piece.x;
-    let targetY = piece.y;
+      isSolving = true;
+      solveButton.disabled = true; // Disable button during playback
+      resetButton.disabled = true; // Disable reset during playback
+      board.classList.add('solving'); // Add class to disable pointer events via CSS
+      render(); // Render immediately to reflect disabled state visually
 
-    // Determine primary move direction (only allow cardinal moves)
-    if (Math.abs(deltaX) > Math.abs(deltaY)) { // Horizontal move attempt
-        targetX += Math.sign(deltaX);
-    } else if (Math.abs(deltaY) > Math.abs(deltaX)) { // Vertical move attempt
-        targetY += Math.sign(deltaY);
-    } else {
-        // Dropped near the original spot or diagonally - invalid move for slide puzzle
-        // Or handle more complex logic if desired, but simple is best here.
-        console.log("Invalid move: Drop location unclear or diagonal.");
+      // Start the sequence after a brief delay
+      solutionTimeoutId = setTimeout(() => playSolutionStep(0), 500);
+  }
+
+  function stopSolution() {
+      console.log("Stopping solution playback.");
+      if (solutionTimeoutId) {
+          clearTimeout(solutionTimeoutId); // Cancel scheduled next step
+          solutionTimeoutId = null;
+      }
+      isSolving = false;
+      solveButton.disabled = false; // Re-enable button
+      resetButton.disabled = false;
+      board.classList.remove('solving'); // Re-enable pointer events
+      render(); // Update visual state
+  }
+
+
+  // --- Event Handlers (Interaction) ---
+  function handleInteractionStart(event) {
+    // IMPORTANT: Disable user interaction if solution is playing
+    if (isSolving) {
+        event.preventDefault();
         return;
     }
 
-     // Check if the calculated single-step move is valid
-    if (canMoveTo(piece, targetX, targetY)) {
-       // Check if the target requires moving more than one step (e.g., piece is 2 units wide/tall)
-        const actualMoveX = targetX - piece.x;
-        const actualMoveY = targetY - piece.y;
+    let targetElement = event.target.closest('.piece');
+    if (!targetElement || isDragging) return;
 
-       // Verify ALL spaces needed for the move are clear
-        let multiStepClear = true;
-        if (actualMoveX !== 0) { // Horizontal move
-            const checkY = piece.y;
-            const step = Math.sign(actualMoveX);
-            const checkX = (step > 0) ? piece.x + piece.w : piece.x - 1; // Check space next to the piece edge
-             for (let dy = 0; dy < piece.h; dy++) {
-                 if (!isCellClear(checkX, checkY + dy, piece.id)) {
-                     multiStepClear = false;
-                     break;
-                 }
-             }
+    event.preventDefault(); // Prevent defaults
 
-        } else { // Vertical move
-            const checkX = piece.x;
-            const step = Math.sign(actualMoveY);
-            const checkY = (step > 0) ? piece.y + piece.h : piece.y - 1; // Check space below/above piece edge
-            for (let dx = 0; dx < piece.w; dx++) {
-                 if (!isCellClear(checkX + dx, checkY, piece.id)) {
-                    multiStepClear = false;
-                    break;
-                 }
-            }
-        }
+    activePieceElement = targetElement;
+    activePieceData = getPieceById(activePieceElement.innerText);
+    if (!activePieceData) return;
 
+    pieceStartGridX = activePieceData.x;
+    pieceStartGridY = activePieceData.y;
+    touchStartX = (event.touches ? event.touches[0].clientX : event.clientX);
+    touchStartY = (event.touches ? event.touches[0].clientY : event.clientY);
 
-        if (multiStepClear) {
-            piece.x = targetX;
-            piece.y = targetY;
-            render(); // Re-render the board with the new piece position
+    isDragging = true;
+    activePieceElement.classList.add('dragging');
 
-            // Check win condition
-            if (piece.id === "曹操" && piece.x === 1 && piece.y === 3) {
-              // Use setTimeout to allow the final render to complete before the alert blocks execution
-              setTimeout(() => alert("恭喜过关！"), 100);
-            }
-        } else {
-             console.log("Invalid move: Path blocked for multi-cell piece.");
-        }
-
-    } else {
-        console.log(`Invalid move: Cannot move to ${targetX}, ${targetY}`);
-    }
-  });
-
-  // Refined canMoveTo check for the target position *only*
-  // Assumes single step movement check is done before calling this
-   function canMoveTo(piece, newX, newY) {
-    // Check boundaries first
-    if (newX < 0 || newY < 0 || (newX + piece.w) > 4 || (newY + piece.h) > 5) {
-        // console.log("Boundary check failed");
-        return false;
-    }
-
-    // Check if target cells are occupied by *other* pieces
-    for (let dy = 0; dy < piece.h; dy++) {
-      for (let dx = 0; dx < piece.w; dx++) {
-        if (!isCellClear(newX + dx, newY + dy, piece.id)) {
-            // console.log(`Target cell ${newX + dx}, ${newY + dy} is blocked.`);
-            return false;
-        }
-      }
-    }
-
-    // console.log(`Move to ${newX}, ${newY} seems valid.`);
-    return true; // If all checks pass, the move is valid
+    document.addEventListener('mousemove', handleInteractionMove, { passive: false });
+    document.addEventListener('touchmove', handleInteractionMove, { passive: false });
+    document.addEventListener('mouseup', handleInteractionEnd);
+    document.addEventListener('touchend', handleInteractionEnd);
+    document.addEventListener('touchcancel', handleInteractionEnd);
+    document.addEventListener('mouseleave', handleInteractionEnd);
   }
 
-  // Helper function to check if a specific cell is clear of *other* pieces
-  function isCellClear(x, y, movingPieceId) {
-       if (x < 0 || y < 0 || x >= 4 || y >= 5) return false; // Outside bounds
+  function handleInteractionMove(event) { /* ... (same as before) ... */
+      if (!isDragging || !activePieceElement) return;
+      event.preventDefault();
+      let currentX = (event.touches ? event.touches[0].clientX : event.clientX);
+      let currentY = (event.touches ? event.touches[0].clientY : event.clientY);
+      let deltaX = currentX - touchStartX;
+      let deltaY = currentY - touchStartY;
+      activePieceElement.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.05)`;
+  }
 
-       const grid = createGridMap(); // Get current grid state
-       const occupantId = grid[y][x];
+  function handleInteractionEnd(event) { /* ... (same as before, calls executeMove) ... */
+      if (!isDragging || !activePieceElement || !activePieceData) return;
 
-       // Cell is clear if null OR if it's part of the piece currently being moved
-       return occupantId === null || occupantId === movingPieceId;
-   }
+      document.removeEventListener('mousemove', handleInteractionMove);
+      document.removeEventListener('touchmove', handleInteractionMove);
+      document.removeEventListener('mouseup', handleInteractionEnd);
+      document.removeEventListener('touchend', handleInteractionEnd);
+      document.removeEventListener('touchcancel', handleInteractionEnd);
+      document.removeEventListener('mouseleave', handleInteractionEnd);
+
+      let finalX = (event.changedTouches ? event.changedTouches[0].clientX : event.clientX);
+      let finalY = (event.changedTouches ? event.changedTouches[0].clientY : event.clientY);
+      let totalDeltaX = finalX - touchStartX;
+      let totalDeltaY = finalY - touchStartY;
+      const moveThreshold = 30;
+      let targetX = pieceStartGridX;
+      let targetY = pieceStartGridY;
+      let moveAttempted = false;
+
+      if (Math.abs(totalDeltaX) > moveThreshold || Math.abs(totalDeltaY) > moveThreshold) {
+          if (Math.abs(totalDeltaX) > Math.abs(totalDeltaY)) {
+              targetX += Math.sign(totalDeltaX);
+          } else {
+              targetY += Math.sign(totalDeltaY);
+          }
+          // Only execute if target is different from start
+          if (targetX !== pieceStartGridX || targetY !== pieceStartGridY) {
+             executeMove(activePieceData, targetX, targetY);
+             moveAttempted = true; // Record that a move attempt was made
+          }
+      }
+
+      // Clean up styles and state
+      activePieceElement.classList.remove('dragging');
+      activePieceElement.style.transform = '';
+
+      isDragging = false;
+      activePieceElement = null;
+      activePieceData = null;
+      // No immediate render here; executeMove handles rendering on success.
+      // If the move failed or wasn't attempted, the piece visually snaps back due to CSS transition reset.
+      // If snapping back needs to be instant or more controlled, uncommenting render() might be needed.
+      // render();
+  }
 
 
-  render(); // Initial rendering of the game board
+  // --- Attach Initial Listeners ---
+  board.addEventListener('touchstart', handleInteractionStart, { passive: false });
+  board.addEventListener('mousedown', handleInteractionStart); // Also handle mouse down
+
+  // --- D&D Listeners (Kept for Desktop, but interaction disabled during solve) ---
+   board.addEventListener('dragstart', (e) => {
+        if (isSolving) { e.preventDefault(); return; } // Disable D&D during solve
+        let targetElement = e.target.closest('.piece');
+        if (!targetElement) { e.preventDefault(); return; }
+        setTimeout(() => targetElement.style.opacity = '0.5', 0);
+        e.dataTransfer.setData("text/plain", targetElement.innerText);
+        e.dataTransfer.effectAllowed = "move";
+   });
+   board.addEventListener('dragend', (e) => {
+        if (isSolving) return;
+        let targetElement = e.target.closest('.piece');
+        if(targetElement) targetElement.style.opacity = '1';
+   });
+  board.addEventListener('dragover', (e) => {
+    if (isSolving) { e.preventDefault(); return; } // Disable D&D during solve
+    e.preventDefault(); e.dataTransfer.dropEffect = "move";
+  });
+  board.addEventListener('drop', (e) => {
+    if (isSolving) { e.preventDefault(); return; } // Disable D&D during solve
+    e.preventDefault();
+    const id = e.dataTransfer.getData("text/plain");
+    const piece = getPieceById(id);
+    if (!piece) return;
+    const draggedElement = getElementByPieceId(id);
+    if (draggedElement) draggedElement.style.opacity = '1';
+
+    const rect = board.getBoundingClientRect();
+    const dropX = e.clientX - rect.left; const dropY = e.clientY - rect.top;
+    const gridX = Math.floor(dropX / gridSize); const gridY = Math.floor(dropY / gridSize);
+    const deltaX = gridX - piece.x; const deltaY = gridY - piece.y;
+    let targetX = piece.x; let targetY = piece.y;
+
+    if (Math.abs(deltaX) >= Math.abs(deltaY) && deltaX !== 0) { targetX += Math.sign(deltaX); }
+    else if (Math.abs(deltaY) > Math.abs(deltaX) && deltaY !== 0) { targetY += Math.sign(deltaY); }
+    else { render(); return; } // No move or invalid
+
+    executeMove(piece, targetX, targetY);
+  });
+
+  // --- ADDED: Button Listeners ---
+  solveButton.addEventListener('click', startSolution);
+  resetButton.addEventListener('click', resetBoard);
+
+  // --- Initial Game Setup ---
+  render(); // Draw the initial board
+
 </script>
 
 </body>
