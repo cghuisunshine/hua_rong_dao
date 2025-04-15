@@ -303,18 +303,7 @@
       piece.x = newX;
       piece.y = newY;
       render(); // Re-render the board visually
-      // Check win condition (only really relevant after manual play or full solution)
-      if (piece.id === "曹操" && piece.x === 1 && piece.y === 3) {
-          if (isSolving) { // If solved via automation
-               console.log("Solution Complete! (Reached target state)"); // Log instead of alert
-               stopSolution(); // Stop further steps if any
-               // setTimeout(() => alert("Solution Complete! (Reached target state)"), 100); // Removed alert
-          } else {
-               console.log("Manual Win! (Reached target state)"); // Log instead of alert
-               // setTimeout(() => alert("恭喜过关！"), 100); // Removed alert
-               // Optionally disable further moves after manual win?
-          }
-      }
+      // Win condition check moved to playSolutionStep
       return true; // Move successful
     } else {
         console.warn(`Invalid move attempt: ${piece.id} to (${newX}, ${newY})`);
@@ -360,15 +349,22 @@
             return;
       }
 
+      // --- ADDED: Check for win condition AFTER successful move ---
+      if (pieceToMove.id === "曹操" && pieceToMove.x === 1 && pieceToMove.y === 3) {
+          console.log("Solution Complete! (Reached target state via sequence)");
+          stopSolution(); // Stop playback, goal reached
+          return; // Don't schedule next step
+      }
+      // --- END ADDED ---
+
+
       // Schedule the next step ONLY if still solving
-      // (executeMove might have called stopSolution() if it was the winning move)
       if (isSolving) {
           solutionTimeoutId = setTimeout(() => {
               playSolutionStep(stepIndex + 1);
           }, 1000); // 1000ms = 1 second interval
-      } else {
-           console.log("Solution completed or stopped during executeMove, not scheduling next step.");
       }
+      // No 'else' needed here, stopSolution() handles the state if called above or manually
   }
 
   function startSolution() {
