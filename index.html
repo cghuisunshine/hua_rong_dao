@@ -182,14 +182,7 @@
             const piece = getPieceById(pieceId);
             if (!piece) return false;
 
-            const deltaX = targetX - piece.x;
-            const deltaY = targetY - piece.y;
-
-            // Allow only single-step horizontal or vertical moves
-            if (Math.abs(deltaX) + Math.abs(deltaY) !== 1) {
-                 console.warn("Move must be single step H or V");
-                 return false;
-            }
+            // Single-step check is now handled by the caller (handleMouseUp)
 
             if (isValidMove(piece, targetX, targetY)) {
                 piece.x = targetX;
@@ -290,15 +283,32 @@
             const targetX = Math.round(finalLeft / TILE_SIZE);
             const targetY = Math.round(finalTop / TILE_SIZE);
 
-            // Attempt the move to the calculated target grid position
-            if (!attemptMove(pieceId, targetX, targetY)) {
-                // If move failed, snap back to original position
-                selectedPieceElement.style.left = `${piece.x * TILE_SIZE}px`;
-                selectedPieceElement.style.top = `${piece.y * TILE_SIZE}px`;
+            // Calculate move delta
+            const deltaX = targetX - piece.x;
+            const deltaY = targetY - piece.y;
+
+            let moveSuccessful = false;
+            // Check if it's a valid single-step move attempt
+            if (Math.abs(deltaX) + Math.abs(deltaY) === 1) {
+                // Attempt the move (checks bounds and collisions)
+                moveSuccessful = attemptMove(pieceId, targetX, targetY);
+            } else {
+                 console.log("Drag resulted in non-single-step move attempt.");
+                 // Not a single step, so invalid by definition for Klotski slide
             }
+
+            // If the move was not successful (not single step, or collision/bounds fail)
+            // re-render the board to snap the piece back based on current state.
+            if (!moveSuccessful) {
+                 console.log(`Move of ${pieceId} to (${targetX}, ${targetY}) failed. Snapping back.`);
+                 renderBoard(); // Redraw based on unchanged state
+            }
+             // If moveSuccessful, attemptMove already called renderBoard()
 
             // Clean up drag state and listeners
             selectedPieceElement.classList.remove('dragging');
+            // z-index is reset implicitly by renderBoard if move failed,
+            // or by the new element created by renderBoard if successful.
             selectedPieceElement.style.zIndex = 1; // Reset z-index
             selectedPieceElement = null;
             window.removeEventListener('mousemove', handleMouseMove);
