@@ -306,10 +306,13 @@
       // Check win condition (only really relevant after manual play or full solution)
       if (piece.id === "曹操" && piece.x === 1 && piece.y === 3) {
           if (isSolving) { // If solved via automation
+               console.log("Solution Complete! (Reached target state)"); // Log instead of alert
                stopSolution(); // Stop further steps if any
-               setTimeout(() => alert("Solution Complete! (Reached target state)"), 100);
+               // setTimeout(() => alert("Solution Complete! (Reached target state)"), 100); // Removed alert
           } else {
-               setTimeout(() => alert("恭喜过关！"), 100);
+               console.log("Manual Win! (Reached target state)"); // Log instead of alert
+               // setTimeout(() => alert("恭喜过关！"), 100); // Removed alert
+               // Optionally disable further moves after manual win?
           }
       }
       return true; // Move successful
@@ -357,10 +360,15 @@
             return;
       }
 
-      // Schedule the next step after 1 second
-      solutionTimeoutId = setTimeout(() => {
-          playSolutionStep(stepIndex + 1);
-      }, 1000); // 1000ms = 1 second interval
+      // Schedule the next step ONLY if still solving
+      // (executeMove might have called stopSolution() if it was the winning move)
+      if (isSolving) {
+          solutionTimeoutId = setTimeout(() => {
+              playSolutionStep(stepIndex + 1);
+          }, 1000); // 1000ms = 1 second interval
+      } else {
+           console.log("Solution completed or stopped during executeMove, not scheduling next step.");
+      }
   }
 
   function startSolution() {
