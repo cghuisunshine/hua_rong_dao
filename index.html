@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klotski Puzzle (华容道)</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align items to the top */
+            padding-top: 20px;
+            gap: 30px; /* Space between board and controls */
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .board {
+            position: relative;
+            width: 400px; /* 4 units * 100px/unit */
+            height: 500px; /* 5 units * 100px/unit */
+            border: 2px solid black;
+            background-color: #eee;
+            box-sizing: border-box; /* Include border in width/height */
+        }
+
+        .piece {
+            position: absolute;
+            border: 1px solid #555;
+            background-color: lightblue;
+            box-sizing: border-box; /* Include border in width/height */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: grab;
+            user-select: none; /* Prevent text selection during drag */
+            transition: top 0.2s ease, left 0.2s ease; /* Smooth movement */
+        }
+
+        .piece.dragging {
+            opacity: 0.7;
+            cursor: grabbing;
+            z-index: 10; /* Ensure dragging piece is on top */
+        }
+
+        /* Specific piece styles */
+        .piece[data-id="曹操"] { background-color: #ff6666; font-size: 1.5em; } /* Red */
+        .piece[data-id="关羽"] { background-color: #99cc99; } /* Green */
+        .piece[data-id^="张飞"], .piece[data-id^="赵云"],
+        .piece[data-id^="马超"], .piece[data-id^="黄忠"] { background-color: #ffcc66; } /* Yellow */
+        .piece[data-id^="卒"] { background-color: #cccccc; font-size: 1em; } /* Grey */
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column; /* Stack buttons vertically */
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px 15px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        .message {
+            margin-top: 15px;
+            font-weight: bold;
+            color: green;
+            min-height: 1.2em; /* Reserve space */
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="game-board" class="board">
+            <!-- Pieces will be added here by JavaScript -->
+        </div>
+        <div id="message-area" class="message"></div>
+    </div>
+
+    <div class="controls">
+        <button id="reset-button">Reset Game</button>
+        <button id="solve-button">Show Solution</button>
+        <button id="stop-solve-button" disabled>Stop Solution</button>
+    </div>
+
+    <script>
+        const boardElement = document.getElementById('game-board');
+        const resetButton = document.getElementById('reset-button');
+        const solveButton = document.getElementById('solve-button');
+        const stopSolveButton = document.getElementById('stop-solve-button');
+        const messageArea = document.getElementById('message-area');
+
+        const TILE_SIZE = 100; // px
+        const BOARD_WIDTH = 4;
+        const BOARD_HEIGHT = 5;
+
+        // Initial state for "齐头并进" layout
+        const initialPiecesState = [
+            { id: "曹操", x: 1, y: 0, w: 2, h: 2 }, // Cao Cao (2x2)
+            { id: "关羽", x: 1, y: 2, w: 2, h: 1 }, // Guan Yu (2x1)
+            { id: "张飞", x: 0, y: 0, w: 1, h: 2 }, // Zhang Fei (1x2)
+            { id: "赵云", x: 3, y: 0, w: 1, h: 2 }, // Zhao Yun (1x2)
+            { id: "马超", x: 0, y: 2, w: 1, h: 2 }, // Ma Chao (1x2)
+            { id: "黄忠", x: 3, y: 2, w: 1, h: 2 }, // Huang Zhong (1x2)
+            { id: "卒1", x: 0, y: 4, w: 1, h: 1 }, // Soldier 1 (1x1)
+            { id: "卒2", x: 1, y: 3, w: 1, h: 1 }, // Soldier 2 (1x1)
+            { id: "卒3", x: 2, y: 3, w: 1, h: 1 }, // Soldier 3 (1x1)
+            { id: "卒4", x: 3, y: 4, w: 1, h: 1 }, // Soldier 4 (1x1)
+        ];
+
+        // Solution sequence for "齐头并进" (26 steps)
+        const solutionSequence = [
+            { id: "卒2", x: 1, y: 4 }, { id: "卒3", x: 2, y: 4 }, { id: "关羽", x: 1, y: 3 },
+            { id: "曹操", x: 1, y: 1 }, { id: "张飞", x: 0, y: 1 }, { id: "赵云", x: 3, y: 1 },
+            { id: "卒1", x: 1, y: 0 }, { id: "卒4", x: 2, y: 0 }, { id: "马超", x: 1, y: 2 },
+            { id: "黄忠", x: 2, y: 2 }, { id: "卒1", x: 1, y: 1 }, { id: "卒4", x: 2, y: 1 },
+            { id: "张飞", x: 0, y: 3 }, { id: "赵云", x: 3, y: 3 }, { id: "曹操", x: 1, y: 2 },
+            { id: "关羽", x: 1, y: 1 }, { id: "卒2", x: 0, y: 4 }, { id: "卒3", x: 3, y: 4 },
+            { id: "马超", x: 0, y: 2 }, { id: "黄忠", x: 3, y: 2 }, { id: "卒1", x: 1, y: 1 },
+            { id: "卒4", x: 2, y: 1 }, { id: "曹操", x: 1, y: 2 }, { id: "卒1", x: 1, y: 4 },
+            { id: "卒4", x: 2, y: 4 }, { id: "关羽", x: 1, y: 3 }
+            // CaoCao reaches (1,3) implicitly when GuanYu moves down
+        ];
+
+        let currentPiecesState = [];
+        let selectedPieceElement = null;
+        let offsetX = 0;
+        let offsetY = 0;
+        let isSolving = false;
+        let solutionTimeoutId = null;
+        let currentSolutionStep = 0;
+
+        // --- Game Logic ---
+
+        function deepClone(obj) {
+            return JSON.parse(JSON.stringify(obj));
+        }
+
+        function getPieceById(id) {
+            return currentPiecesState.find(p => p.id === id);
+        }
+
+        function isOccupied(x, y, pieceToIgnore = null) {
+            for (const piece of currentPiecesState) {
+                if (piece === pieceToIgnore) continue;
+                if (x >= piece.x && x < piece.x + piece.w &&
+                    y >= piece.y && y < piece.y + piece.h) {
+                    return true; // Collision detected
+                }
+            }
+            return false; // Space is free
+        }
+
+        function isValidMove(piece, newX, newY) {
+            if (newX < 0 || newY < 0 || newX + piece.w > BOARD_WIDTH || newY + piece.h > BOARD_HEIGHT) {
+                return false; // Out of bounds
+            }
+
+            // Check collision with other pieces in the target area
+            for (let i = 0; i < piece.w; i++) {
+                for (let j = 0; j < piece.h; j++) {
+                    if (isOccupied(newX + i, newY + j, piece)) {
+                        return false; // Target area is blocked
+                    }
+                }
+            }
+            return true; // Move is valid
+        }
+
+        function attemptMove(pieceId, targetX, targetY) {
+            const piece = getPieceById(pieceId);
+            if (!piece) return false;
+
+            const deltaX = targetX - piece.x;
+            const deltaY = targetY - piece.y;
+
+            // Allow only single-step horizontal or vertical moves
+            if (Math.abs(deltaX) + Math.abs(deltaY) !== 1) {
+                 console.warn("Move must be single step H or V");
+                 return false;
+            }
+
+            if (isValidMove(piece, targetX, targetY)) {
+                piece.x = targetX;
+                piece.y = targetY;
+                renderBoard();
+                checkWinCondition();
+                return true;
+            }
+            return false;
+        }
+
+        function checkWinCondition() {
+            const caoCao = getPieceById("曹操");
+            if (caoCao && caoCao.x === 1 && caoCao.y === 3) {
+                messageArea.textContent = "恭喜过关！You Win!";
+                // Optionally disable further interaction
+                if (isSolving) {
+                    stopSolutionPlayback(); // Ensure playback stops if win detected during solve
+                }
+                return true;
+            }
+            messageArea.textContent = ""; // Clear message if not won
+            return false;
+        }
+
+        // --- Rendering ---
+
+        function renderBoard() {
+            boardElement.innerHTML = ''; // Clear previous pieces
+            currentPiecesState.forEach(piece => {
+                const pieceElement = document.createElement('div');
+                pieceElement.className = 'piece';
+                pieceElement.dataset.id = piece.id; // Store ID for reference
+                pieceElement.textContent = piece.id; // Display name
+                pieceElement.style.left = `${piece.x * TILE_SIZE}px`;
+                pieceElement.style.top = `${piece.y * TILE_SIZE}px`;
+                pieceElement.style.width = `${piece.w * TILE_SIZE}px`;
+                pieceElement.style.height = `${piece.h * TILE_SIZE}px`;
+
+                // Add drag listeners only if not currently solving
+                if (!isSolving) {
+                    pieceElement.addEventListener('mousedown', handleMouseDown);
+                }
+
+                boardElement.appendChild(pieceElement);
+            });
+        }
+
+        // --- Drag and Drop Handling ---
+
+        function handleMouseDown(event) {
+            if (isSolving) return; // Don't allow manual moves during solution playback
+
+            selectedPieceElement = event.target;
+            const pieceId = selectedPieceElement.dataset.id;
+            const piece = getPieceById(pieceId);
+
+            // Calculate offset from top-left corner of the piece
+            const rect = selectedPieceElement.getBoundingClientRect();
+            offsetX = event.clientX - rect.left;
+            offsetY = event.clientY - rect.top;
+
+            selectedPieceElement.classList.add('dragging');
+            selectedPieceElement.style.zIndex = 10; // Bring to front
+
+            // Add listeners to the window to track mouse movement everywhere
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+        }
+
+        function handleMouseMove(event) {
+            if (!selectedPieceElement) return;
+
+            // Calculate potential new top-left position based on mouse position and offset
+            const boardRect = boardElement.getBoundingClientRect();
+            let newLeft = event.clientX - boardRect.left - offsetX;
+            let newTop = event.clientY - boardRect.top - offsetY;
+
+            // Keep the piece visually within the board boundaries during drag
+            const piece = getPieceById(selectedPieceElement.dataset.id);
+            newLeft = Math.max(0, Math.min(newLeft, (BOARD_WIDTH - piece.w) * TILE_SIZE));
+            newTop = Math.max(0, Math.min(newTop, (BOARD_HEIGHT - piece.h) * TILE_SIZE));
+
+
+            selectedPieceElement.style.left = `${newLeft}px`;
+            selectedPieceElement.style.top = `${newTop}px`;
+        }
+
+        function handleMouseUp(event) {
+            if (!selectedPieceElement) return;
+
+            const pieceId = selectedPieceElement.dataset.id;
+            const piece = getPieceById(pieceId);
+
+            // Calculate the target grid cell based on the center of the dragged piece
+            const finalLeft = parseFloat(selectedPieceElement.style.left);
+            const finalTop = parseFloat(selectedPieceElement.style.top);
+            const targetX = Math.round(finalLeft / TILE_SIZE);
+            const targetY = Math.round(finalTop / TILE_SIZE);
+
+            // Attempt the move to the calculated target grid position
+            if (!attemptMove(pieceId, targetX, targetY)) {
+                // If move failed, snap back to original position
+                selectedPieceElement.style.left = `${piece.x * TILE_SIZE}px`;
+                selectedPieceElement.style.top = `${piece.y * TILE_SIZE}px`;
+            }
+
+            // Clean up drag state and listeners
+            selectedPieceElement.classList.remove('dragging');
+            selectedPieceElement.style.zIndex = 1; // Reset z-index
+            selectedPieceElement = null;
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        }
+
+
+        // --- Solution Playback ---
+
+        function startSolutionPlayback() {
+            if (isSolving) return; // Already solving
+
+            resetGame(); // Start from initial state for solution
+            isSolving = true;
+            currentSolutionStep = 0;
+            solveButton.disabled = true;
+            resetButton.disabled = true;
+            stopSolveButton.disabled = false;
+            messageArea.textContent = "Playing solution...";
+            disableManualDragging(); // Prevent manual moves during playback
+
+            playNextSolutionStep();
+        }
+
+        function playNextSolutionStep() {
+            if (!isSolving || currentSolutionStep >= solutionSequence.length) {
+                stopSolutionPlayback(); // Reached end or stopped manually
+                if (!checkWinCondition()) { // Check win condition explicitly at the end
+                     messageArea.textContent = "Solution finished."; // Or error if not won
+                }
+                return;
+            }
+
+            const step = solutionSequence[currentSolutionStep];
+            const piece = getPieceById(step.id);
+
+            if (!piece) {
+                console.error(`Solution step ${currentSolutionStep}: Piece ${step.id} not found!`);
+                stopSolutionPlayback();
+                return;
+            }
+
+            // Directly update state and render - validation assumed correct in sequence
+            piece.x = step.x;
+            piece.y = step.y;
+            renderBoard(); // Render the move
+
+            // Check win AFTER rendering the move
+            if (checkWinCondition()) {
+                 // Win condition met, stop playback naturally
+                 stopSolutionPlayback();
+                 return;
+            }
+
+
+            currentSolutionStep++;
+            solutionTimeoutId = setTimeout(playNextSolutionStep, 500); // Adjust speed here (ms)
+        }
+
+        function stopSolutionPlayback() {
+            if (solutionTimeoutId) {
+                clearTimeout(solutionTimeoutId);
+                solutionTimeoutId = null;
+            }
+            isSolving = false;
+            solveButton.disabled = false;
+            resetButton.disabled = false;
+            stopSolveButton.disabled = true;
+            enableManualDragging(); // Re-enable manual moves
+            if (!messageArea.textContent.includes("Win")) { // Don't overwrite win message
+                 messageArea.textContent = "Solution stopped.";
+            }
+        }
+
+        function disableManualDragging() {
+            boardElement.querySelectorAll('.piece').forEach(el => {
+                // Clone and replace to remove existing listeners easily
+                const newEl = el.cloneNode(true);
+                el.parentNode.replaceChild(newEl, el);
+            });
+        }
+
+        function enableManualDragging() {
+            // Re-render will add listeners back if needed, or just re-add them
+            renderBoard();
+        }
+
+
+        // --- Initialization and Reset ---
+
+        function resetGame() {
+            stopSolutionPlayback(); // Stop any ongoing solution
+            currentPiecesState = deepClone(initialPiecesState);
+            messageArea.textContent = ""; // Clear any messages
+            renderBoard();
+        }
+
+        // --- Event Listeners ---
+
+        resetButton.addEventListener('click', resetGame);
+        solveButton.addEventListener('click', startSolutionPlayback);
+        stopSolveButton.addEventListener('click', stopSolutionPlayback);
+
+        // --- Initial Setup ---
+        resetGame(); // Initialize the board on load
+
+    </script>
+
+</body>
+</html>
