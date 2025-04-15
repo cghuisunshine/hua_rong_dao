@@ -95,106 +95,106 @@
     const unitSize = 100; // px
     const targetBlockId = 'block-1'; // The 2x2 block ('Cao Cao')
     const targetWinX = 1;
-    const targetWinY = 3; // Target position (0-indexed)
+    const targetWinY = 0; // Target position (0-indexed, flipped to top center)
 
-    // Standard Huarong Dao initial layout (corrected for the 81-step solution)
+    // Standard Huarong Dao initial layout (flipped upside down for the 81-step solution)
     const initialBlocks = [
-        { id: 'block-0', x: 0, y: 0, w: 1, h: 2, name: 'Zhang Fei' },
-        { id: 'block-1', x: 1, y: 0, w: 2, h: 2, name: 'Cao Cao', isTarget: true },
-        { id: 'block-2', x: 3, y: 0, w: 1, h: 2, name: 'Ma Chao' },
-        { id: 'block-3', x: 0, y: 2, w: 1, h: 2, name: 'Zhao Yun' },
+        { id: 'block-0', x: 0, y: 3, w: 1, h: 2, name: 'Zhang Fei' },
+        { id: 'block-1', x: 1, y: 3, w: 2, h: 2, name: 'Cao Cao', isTarget: true },
+        { id: 'block-2', x: 3, y: 3, w: 1, h: 2, name: 'Ma Chao' },
+        { id: 'block-3', x: 0, y: 1, w: 1, h: 2, name: 'Zhao Yun' },
         { id: 'block-4', x: 1, y: 2, w: 2, h: 1, name: 'Guan Yu' },
-        { id: 'block-5', x: 3, y: 2, w: 1, h: 2, name: 'Huang Zhong' },
-        { id: 'block-6', x: 0, y: 4, w: 1, h: 1, name: 'Soldier' },
-        { id: 'block-7', x: 1, y: 3, w: 1, h: 1, name: 'Soldier' },
-        { id: 'block-8', x: 2, y: 3, w: 1, h: 1, name: 'Soldier' },
-        { id: 'block-9', x: 3, y: 4, w: 1, h: 1, name: 'Soldier' },
+        { id: 'block-5', x: 3, y: 1, w: 1, h: 2, name: 'Huang Zhong' },
+        { id: 'block-6', x: 0, y: 0, w: 1, h: 1, name: 'Soldier' },
+        { id: 'block-7', x: 1, y: 1, w: 1, h: 1, name: 'Soldier' },
+        { id: 'block-8', x: 2, y: 1, w: 1, h: 1, name: 'Soldier' },
+        { id: 'block-9', x: 3, y: 0, w: 1, h: 1, name: 'Soldier' },
     ];
 
     // --- HARDCODED SOLUTION PATH ---
-    // Full 81-step optimal solution for standard Huarong Dao layout
+    // Full 81-step optimal solution for standard Huarong Dao layout (flipped, Cao Cao moves from bottom to top)
     // Each object represents one move: { blockId: 'id_of_block_to_move', dx: change_in_x, dy: change_in_y }
     // dx=1 (right), dx=-1 (left), dy=1 (down), dy=-1 (up)
     const hardcodedSolutionPath = [
-        { blockId: 'block-6', dx: 0, dy: -1 }, // Soldier Up
-        { blockId: 'block-7', dx: 0, dy: -1 }, // Soldier Up
-        { blockId: 'block-4', dx: 0, dy: 1 },  // Guan Yu Down
-        { blockId: 'block-1', dx: 0, dy: 1 },  // Cao Cao Down
+        { blockId: 'block-6', dx: 0, dy: 1 },  // Soldier Down
+        { blockId: 'block-7', dx: 0, dy: 1 },  // Soldier Down
+        { blockId: 'block-4', dx: 0, dy: -1 }, // Guan Yu Up
+        { blockId: 'block-1', dx: 0, dy: -1 }, // Cao Cao Up
         { blockId: 'block-0', dx: 1, dy: 0 },  // Zhang Fei Right
         { blockId: 'block-3', dx: 1, dy: 0 },  // Zhao Yun Right
-        { blockId: 'block-8', dx: 0, dy: -1 }, // Soldier Up
+        { blockId: 'block-8', dx: 0, dy: 1 },  // Soldier Down
         { blockId: 'block-6', dx: -1, dy: 0 }, // Soldier Left
-        { blockId: 'block-4', dx: 0, dy: -1 }, // Guan Yu Up
-        { blockId: 'block-7', dx: 1, dy: 0 },  // Soldier Right
-        { blockId: 'block-9', dx: 0, dy: -1 }, // Soldier Up
-        { blockId: 'block-5', dx: -1, dy: 0 }, // Huang Zhong Left
-        { blockId: 'block-2', dx: -1, dy: 0 }, // Ma Chao Left
-        { blockId: 'block-7', dx: 0, dy: 1 },  // Soldier Down
-        { blockId: 'block-9', dx: -1, dy: 0 }, // Soldier Left
-        { blockId: 'block-5', dx: 0, dy: -1 }, // Huang Zhong Up
-        { blockId: 'block-2', dx: 0, dy: 1 },  // Ma Chao Down
-        { blockId: 'block-7', dx: 1, dy: 0 },  // Soldier Right
         { blockId: 'block-4', dx: 0, dy: 1 },  // Guan Yu Down
-        { blockId: 'block-6', dx: 0, dy: -1 }, // Soldier Up
-        { blockId: 'block-3', dx: 0, dy: -1 }, // Zhao Yun Up
-        { blockId: 'block-0', dx: 0, dy: 1 },  // Zhang Fei Down
-        { blockId: 'block-8', dx: 1, dy: 0 },  // Soldier Right
-        { blockId: 'block-6', dx: -1, dy: 0 }, // Soldier Left
-        { blockId: 'block-4', dx: -1, dy: 0 }, // Guan Yu Left
-        { blockId: 'block-1', dx: 0, dy: -1 }, // Cao Cao Up
-        { blockId: 'block-7', dx: 0, dy: -1 }, // Soldier Up
-        { blockId: 'block-9', dx: 1, dy: 0 },  // Soldier Right
-        { blockId: 'block-5', dx: 0, dy: 1 },  // Huang Zhong Down
-        { blockId: 'block-2', dx: 0, dy: -1 }, // Ma Chao Up
         { blockId: 'block-7', dx: 1, dy: 0 },  // Soldier Right
         { blockId: 'block-9', dx: 0, dy: 1 },  // Soldier Down
         { blockId: 'block-5', dx: -1, dy: 0 }, // Huang Zhong Left
+        { blockId: 'block-2', dx: -1, dy: 0 }, // Ma Chao Left
+        { blockId: 'block-7', dx: 0, dy: -1 }, // Soldier Up
+        { blockId: 'block-9', dx: -1, dy: 0 }, // Soldier Left
+        { blockId: 'block-5', dx: 0, dy: 1 },  // Huang Zhong Down
+        { blockId: 'block-2', dx: 0, dy: -1 }, // Ma Chao Up
+        { blockId: 'block-7', dx: 1, dy: 0 },  // Soldier Right
         { blockId: 'block-4', dx: 0, dy: -1 }, // Guan Yu Up
         { blockId: 'block-6', dx: 0, dy: 1 },  // Soldier Down
-        { blockId: 'block-8', dx: 0, dy: -1 }, // Soldier Up
-        { blockId: 'block-0', dx: 0, dy: -1 }, // Zhang Fei Up
-        { blockId: 'block-3', dx: 1, dy: 0 },  // Zhao Yun Right
-        { blockId: 'block-1', dx: -1, dy: 0 }, // Cao Cao Left
-        { blockId: 'block-4', dx: 1, dy: 0 },  // Guan Yu Right
-        { blockId: 'block-6', dx: 0, dy: -1 }, // Soldier Up
-        { blockId: 'block-8', dx: 1, dy: 0 },  // Soldier Right
-        { blockId: 'block-0', dx: 0, dy: 1 },  // Zhang Fei Down
         { blockId: 'block-3', dx: 0, dy: 1 },  // Zhao Yun Down
-        { blockId: 'block-6', dx: -1, dy: 0 }, // Soldier Left
-        { blockId: 'block-4', dx: 0, dy: 1 },  // Guan Yu Down
-        { blockId: 'block-1', dx: 0, dy: -1 }, // Cao Cao Up
-        { blockId: 'block-3', dx: 0, dy: -1 }, // Zhao Yun Up
-        { blockId: 'block-0', dx: 1, dy: 0 },  // Zhang Fei Right
-        { blockId: 'block-8', dx: 0, dy: 1 },  // Soldier Down
-        { blockId: 'block-6', dx: 1, dy: 0 },  // Soldier Right
-        { blockId: 'block-3', dx: -1, dy: 0 }, // Zhao Yun Left
         { blockId: 'block-0', dx: 0, dy: -1 }, // Zhang Fei Up
-        { blockId: 'block-8', dx: -1, dy: 0 }, // Soldier Left
-        { blockId: 'block-6', dx: 0, dy: 1 },  // Soldier Down
+        { blockId: 'block-8', dx: 1, dy: 0 },  // Soldier Right
+        { blockId: 'block-6', dx: -1, dy: 0 }, // Soldier Left
         { blockId: 'block-4', dx: -1, dy: 0 }, // Guan Yu Left
         { blockId: 'block-1', dx: 0, dy: 1 },  // Cao Cao Down
         { blockId: 'block-7', dx: 0, dy: 1 },  // Soldier Down
-        { blockId: 'block-9', dx: 0, dy: -1 }, // Soldier Up
-        { blockId: 'block-5', dx: 1, dy: 0 },  // Huang Zhong Right
+        { blockId: 'block-9', dx: 1, dy: 0 },  // Soldier Right
+        { blockId: 'block-5', dx: 0, dy: -1 }, // Huang Zhong Up
         { blockId: 'block-2', dx: 0, dy: 1 },  // Ma Chao Down
-        { blockId: 'block-9', dx: -1, dy: 0 }, // Soldier Left
-        { blockId: 'block-7', dx: 0, dy: -1 }, // Soldier Up
-        { blockId: 'block-1', dx: 1, dy: 0 },  // Cao Cao Right
-        { blockId: 'block-4', dx: 0, dy: -1 }, // Guan Yu Up
+        { blockId: 'block-7', dx: 1, dy: 0 },  // Soldier Right
+        { blockId: 'block-9', dx: 0, dy: -1 }, // Soldier Up
+        { blockId: 'block-5', dx: -1, dy: 0 }, // Huang Zhong Left
+        { blockId: 'block-4', dx: 0, dy: 1 },  // Guan Yu Down
         { blockId: 'block-6', dx: 0, dy: -1 }, // Soldier Up
+        { blockId: 'block-8', dx: 0, dy: 1 },  // Soldier Down
+        { blockId: 'block-0', dx: 0, dy: 1 },  // Zhang Fei Down
+        { blockId: 'block-3', dx: 1, dy: 0 },  // Zhao Yun Right
+        { blockId: 'block-1', dx: -1, dy: 0 }, // Cao Cao Left
+        { blockId: 'block-4', dx: 1, dy: 0 },  // Guan Yu Right
+        { blockId: 'block-6', dx: 0, dy: 1 },  // Soldier Down
+        { blockId: 'block-8', dx: 1, dy: 0 },  // Soldier Right
+        { blockId: 'block-0', dx: 0, dy: -1 }, // Zhang Fei Up
+        { blockId: 'block-3', dx: 0, dy: -1 }, // Zhao Yun Up
+        { blockId: 'block-6', dx: -1, dy: 0 }, // Soldier Left
+        { blockId: 'block-4', dx: 0, dy: -1 }, // Guan Yu Up
+        { blockId: 'block-1', dx: 0, dy: 1 },  // Cao Cao Down
+        { blockId: 'block-3', dx: 0, dy: 1 },  // Zhao Yun Down
+        { blockId: 'block-0', dx: 1, dy: 0 },  // Zhang Fei Right
+        { blockId: 'block-8', dx: 0, dy: -1 }, // Soldier Up
+        { blockId: 'block-6', dx: 1, dy: 0 },  // Soldier Right
+        { blockId: 'block-3', dx: -1, dy: 0 }, // Zhao Yun Left
+        { blockId: 'block-0', dx: 0, dy: 1 },  // Zhang Fei Down
+        { blockId: 'block-8', dx: -1, dy: 0 }, // Soldier Left
+        { blockId: 'block-6', dx: 0, dy: -1 }, // Soldier Up
+        { blockId: 'block-4', dx: -1, dy: 0 }, // Guan Yu Left
+        { blockId: 'block-1', dx: 0, dy: -1 }, // Cao Cao Up
+        { blockId: 'block-7', dx: 0, dy: -1 }, // Soldier Up
+        { blockId: 'block-9', dx: 0, dy: 1 },  // Soldier Down
+        { blockId: 'block-5', dx: 1, dy: 0 },  // Huang Zhong Right
+        { blockId: 'block-2', dx: 0, dy: -1 }, // Ma Chao Up
+        { blockId: 'block-9', dx: -1, dy: 0 }, // Soldier Left
+        { blockId: 'block-7', dx: 0, dy: 1 },  // Soldier Down
+        { blockId: 'block-1', dx: 1, dy: 0 },  // Cao Cao Right
+        { blockId: 'block-4', dx: 0, dy: 1 },  // Guan Yu Down
+        { blockId: 'block-6', dx: 0, dy: 1 },  // Soldier Down
         { blockId: 'block-3', dx: 1, dy: 0 },  // Zhao Yun Right
         { blockId: 'block-0', dx: -1, dy: 0 }, // Zhang Fei Left
         { blockId: 'block-8', dx: 1, dy: 0 },  // Soldier Right
         { blockId: 'block-6', dx: -1, dy: 0 }, // Soldier Left
-        { blockId: 'block-4', dx: 0, dy: 1 },  // Guan Yu Down
-        { blockId: 'block-1', dx: 0, dy: -1 }, // Cao Cao Up
-        { blockId: 'block-7', dx: 0, dy: 1 },  // Soldier Down
-        { blockId: 'block-9', dx: 1, dy: 0 },  // Soldier Right
-        { blockId: 'block-5', dx: 0, dy: -1 }, // Huang Zhong Up
-        { blockId: 'block-2', dx: 0, dy: -1 }, // Ma Chao Up
-        { blockId: 'block-9', dx: 0, dy: 1 },  // Soldier Down
-        { blockId: 'block-7', dx: -1, dy: 0 }, // Soldier Left
+        { blockId: 'block-4', dx: 0, dy: -1 }, // Guan Yu Up
         { blockId: 'block-1', dx: 0, dy: 1 },  // Cao Cao Down
+        { blockId: 'block-7', dx: 0, dy: -1 }, // Soldier Up
+        { blockId: 'block-9', dx: 1, dy: 0 },  // Soldier Right
+        { blockId: 'block-5', dx: 0, dy: 1 },  // Huang Zhong Down
+        { blockId: 'block-2', dx: 0, dy: 1 },  // Ma Chao Down
+        { blockId: 'block-9', dx: 0, dy: -1 }, // Soldier Up
+        { blockId: 'block-7', dx: -1, dy: 0 }, // Soldier Left
+        { blockId: 'block-1', dx: 0, dy: -1 }, // Cao Cao Up
     ];
     // --- END HARDCODED SOLUTION PATH ---
 
