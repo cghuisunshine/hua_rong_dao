@@ -123,9 +123,9 @@
   // --- Helper Functions ---
   function getPieceById(id) { return pieces.find(p => p.id === id); }
   function getElementByPieceId(id) { return Array.from(board.children).find(el => el.innerText === id); }
-  function createGridMap() { /* ... (same as before) ... */
+  function createGridMap(state = pieces) { /* Use provided state or default to global pieces */
       const grid = Array.from({ length: 5 }, () => Array(4).fill(null));
-      for (let p of pieces) {
+      for (let p of state) {
           for (let dx = 0; dx < p.w; dx++) {
               for (let dy = 0; dy < p.h; dy++) {
                   if (p.y + dy < 5 && p.x + dx < 4) {
@@ -136,13 +136,13 @@
       }
       return grid;
   }
-  function isCellClear(x, y, movingPieceId) { /* ... (same as before) ... */
+  function isCellClear(x, y, movingPieceId, state = pieces) { /* Use provided state or default to global pieces */
       if (x < 0 || y < 0 || x >= 4 || y >= 5) return false;
-       const grid = createGridMap();
-       const occupantId = grid[y][x];
-       return occupantId === null || occupantId === movingPieceId;
+      const grid = createGridMap(state);
+      const occupantId = grid[y][x];
+      return occupantId === null || occupantId === movingPieceId;
   }
-  function canMoveTo(piece, newX, newY) { /* ... (same as before, includes path check) ... */
+  function canMoveTo(piece, newX, newY, state = pieces) { /* Use provided state or default to global pieces */
        if (!piece) return false;
         // 1. Boundary Check
         if (newX < 0 || newY < 0 || (newX + piece.w) > 4 || (newY + piece.h) > 5) return false;
@@ -150,7 +150,7 @@
         // 2. Check target area for obstructions
         for (let dy = 0; dy < piece.h; dy++) {
             for (let dx = 0; dx < piece.w; dx++) {
-                if (!isCellClear(newX + dx, newY + dy, piece.id)) return false;
+                if (!isCellClear(newX + dx, newY + dy, piece.id, state)) return false;
             }
         }
 
@@ -164,13 +164,13 @@
         }
         // More detailed path check (optional but better for true sliding)
         if (deltaX > 0) { // Moving right
-             for(let dy = 0; dy < piece.h; dy++) if (!isCellClear(piece.x + piece.w, piece.y + dy, piece.id)) return false;
+             for(let dy = 0; dy < piece.h; dy++) if (!isCellClear(piece.x + piece.w, piece.y + dy, piece.id, state)) return false;
         } else if (deltaX < 0) { // Moving left
-             for(let dy = 0; dy < piece.h; dy++) if (!isCellClear(piece.x - 1, piece.y + dy, piece.id)) return false;
+             for(let dy = 0; dy < piece.h; dy++) if (!isCellClear(piece.x - 1, piece.y + dy, piece.id, state)) return false;
         } else if (deltaY > 0) { // Moving down
-             for(let dx = 0; dx < piece.w; dx++) if (!isCellClear(piece.x + dx, piece.y + piece.h, piece.id)) return false;
+             for(let dx = 0; dx < piece.w; dx++) if (!isCellClear(piece.x + dx, piece.y + piece.h, piece.id, state)) return false;
         } else if (deltaY < 0) { // Moving up
-            for(let dx = 0; dx < piece.w; dx++) if (!isCellClear(piece.x + dx, piece.y - 1, piece.id)) return false;
+            for(let dx = 0; dx < piece.w; dx++) if (!isCellClear(piece.x + dx, piece.y - 1, piece.id, state)) return false;
         }
        return true;
   }
@@ -287,7 +287,7 @@
           const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
           for (const [dx, dy] of dirs) {
               const nx = p.x + dx, ny = p.y + dy;
-              if (canMoveTo(p, nx, ny)) {
+              if (canMoveTo(p, nx, ny, statePieces)) {
                   // clone state & the moving piece
                   const newPieces = structuredClone(statePieces);
                   const np = newPieces.find(k => k.id === p.id);
