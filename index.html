@@ -333,7 +333,7 @@
 
               /* Only attempt to slide the piece one step towards the empty */
               const p = statePieces.find(t => t.id === pid);
-              const tx = p.x + dx, ty = p.y + dy;
+              const tx = p.x - dx, ty = p.y - dy;     // corrected sign: move towards empty
               const moveKey = pid + ':' + tx + ',' + ty;
               if (alreadyTried.has(moveKey)) continue;
               alreadyTried.add(moveKey);
