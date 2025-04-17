@@ -85,6 +85,11 @@
         <option value="zh">中文</option>
         <option value="en">English</option>
     </select>
+    <select id="layoutSelect" onchange="setLayout(this.value)">
+        <option value="classic">经典布局</option>
+        <option value="troops3">兵分三路</option>
+        <option value="besieged">四面楚歌</option>
+    </select>
 </div>
 
 <script>
@@ -93,23 +98,57 @@
   const resetButton = document.getElementById("resetButton");
   const gridSize = 90;
 
-  // --- Store Initial State ---
-  const initialPieces = [
-    { id: "曹操", x: 1, y: 0, w: 2, h: 2 },
-    { id: "关羽", x: 1, y: 2, w: 2, h: 1 },
-    { id: "张飞", x: 0, y: 0, w: 1, h: 2 },
-    { id: "赵云", x: 3, y: 0, w: 1, h: 2 },
-    { id: "马超", x: 0, y: 2, w: 1, h: 2 },
-    { id: "黄忠", x: 3, y: 2, w: 1, h: 2 },
-    { id: "卒1", x: 0, y: 4, w: 1, h: 1 },
-    { id: "卒2", x: 1, y: 3, w: 1, h: 1 },
-    { id: "卒3", x: 2, y: 3, w: 1, h: 1 },
-    { id: "卒4", x: 3, y: 4, w: 1, h: 1 }
-  ];
-
+  /* ========= 典型关卡列表 ========= */
+  const layouts = {
+    classic: {      // 经典布局
+      pieces: [
+        { id:"曹操",x:1,y:0,w:2,h:2 },
+        { id:"关羽",x:1,y:2,w:2,h:1 },
+        { id:"张飞",x:0,y:0,w:1,h:2 },
+        { id:"赵云",x:3,y:0,w:1,h:2 },
+        { id:"马超",x:0,y:2,w:1,h:2 },
+        { id:"黄忠",x:3,y:2,w:1,h:2 },
+        { id:"卒1", x:0,y:4,w:1,h:1 },
+        { id:"卒2", x:1,y:3,w:1,h:1 },
+        { id:"卒3", x:2,y:3,w:1,h:1 },
+        { id:"卒4", x:3,y:4,w:1,h:1 }
+      ]
+    },
+    /* 兵分三路 ── Cao Cao 顶部，中路关羽横卧 */
+    troops3: {
+      pieces: [
+        { id:"曹操",x:1,y:0,w:2,h:2 },
+        { id:"关羽",x:1,y:2,w:2,h:1 },
+        { id:"张飞",x:0,y:0,w:1,h:2 },
+        { id:"赵云",x:3,y:0,w:1,h:2 },
+        { id:"马超",x:0,y:2,w:1,h:2 },
+        { id:"黄忠",x:3,y:2,w:1,h:2 },
+        { id:"卒1", x:0,y:4,w:1,h:1 },
+        { id:"卒2", x:1,y:3,w:1,h:1 },
+        { id:"卒3", x:2,y:3,w:1,h:1 },
+        { id:"卒4", x:3,y:4,w:1,h:1 }
+      ]
+    },
+    /* 四面楚歌 ── 曹操居中，关羽横在顶行，其余将领四角合围 */
+    besieged: {
+      pieces: [
+        { id:"曹操",x:1,y:1,w:2,h:2 },
+        { id:"关羽",x:1,y:0,w:2,h:1 },
+        { id:"张飞",x:0,y:0,w:1,h:2 },
+        { id:"赵云",x:3,y:0,w:1,h:2 },
+        { id:"马超",x:0,y:2,w:1,h:2 },
+        { id:"黄忠",x:3,y:2,w:1,h:2 },
+        { id:"卒1", x:1,y:3,w:1,h:1 },
+        { id:"卒2", x:2,y:3,w:1,h:1 },
+        { id:"卒3", x:0,y:4,w:1,h:1 },
+        { id:"卒4", x:3,y:4,w:1,h:1 }
+      ]
+    }
+  };
+  
   // --- Game State (Mutable) ---
-  // Use structuredClone for a deep copy to prevent mutation of initialPieces
-  let pieces = structuredClone(initialPieces);
+  let currentLayoutKey = 'classic';          // 默认
+  let pieces = structuredClone(layouts[currentLayoutKey].pieces);
 
   // --- Solution Sequence (Dynamically computed using BFS) ---
   let solutionSequence = [];
@@ -234,15 +273,24 @@
     }
   }
 
+  // --- ADDED: Layout Selection Function ---
+  function setLayout(key) {
+    if (!layouts[key] || key === currentLayoutKey) return;
+    stopSolution();                           // 如果正在播放解法则先停掉
+    currentLayoutKey = key;
+    pieces = structuredClone(layouts[key].pieces);
+    render();
+  }
+
   // --- ADDED: Reset Function ---
+  // 把重置按钮也同步到当前布局
   function resetBoard() {
-      console.log("Resetting board...");
-      stopSolution(); // Stop solution playback if running
-      // Deep copy initial state back into the active state
-      pieces = structuredClone(initialPieces);
-      render(); // Render the reset state
-      solveButton.disabled = false; // Re-enable solve button
-      resetButton.disabled = false; // Ensure reset is enabled
+    console.log("Resetting board...");
+    stopSolution();
+    pieces = structuredClone(layouts[currentLayoutKey].pieces);
+    render();
+    solveButton.disabled = false;
+    resetButton.disabled = false;
   }
 
   // --- ADDED: Solution Playback Logic ---
@@ -564,7 +612,12 @@
       helpTitle: "如何玩华容道游戏",
       helpText: "目标是将最大的方块（曹操）移动到棋盘底部的中间位置。\n\n" +
                 "点击并拖动方块来移动它们。方块只能沿水平或垂直方向滑动，不能跳过其他方块。\n\n" +
-                "使用重置按钮返回初始状态，使用显示解决方案按钮查看自动求解演示。"
+                "使用重置按钮返回初始状态，使用显示解决方案按钮查看自动求解演示。",
+      layoutNames: {
+        classic: "经典布局",
+        troops3: "兵分三路",
+        besieged: "四面楚歌"
+      }
     },
     en: {
       pageTitle: "Klotski Game (With Solution Demo)",
@@ -578,7 +631,12 @@
       helpTitle: "How to Play Klotski",
       helpText: "The goal is to move the largest block (Cao Cao) to the middle bottom of the board.\n\n" +
                 "Click and drag the blocks to move them. Blocks can only slide horizontally or vertically, and cannot jump over others.\n\n" +
-                "Use the Reset button to return to the initial state, and the Show Solution button to see an automated solving demo."
+                "Use the Reset button to return to the initial state, and the Show Solution button to see an automated solving demo.",
+      layoutNames: {
+        classic: "Classic Layout",
+        troops3: "Troops in Three",
+        besieged: "Besieged"
+      }
     }
   };
 
@@ -596,6 +654,12 @@
     document.getElementById('resetButton').textContent = texts.resetButton;
     document.getElementById('solveButton').textContent = texts.solveButton;
     document.getElementById('helpButton').textContent = texts.helpButton;
+    
+    // Update layout dropdown text
+    const layoutSelect = document.getElementById('layoutSelect');
+    layoutSelect.options[0].textContent = texts.layoutNames.classic;
+    layoutSelect.options[1].textContent = texts.layoutNames.troops3;
+    layoutSelect.options[2].textContent = texts.layoutNames.besieged;
   }
 
   // Override alert messages to use the correct language
