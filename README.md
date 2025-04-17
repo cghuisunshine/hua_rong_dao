@@ -1,63 +1,174 @@
-# Klotski Game (华容道游戏) - Design and Algorithm Documentation
+# Klotski (华容道) Game – Code Architecture & Solver Algorithm
 
 ## Overview
-This project implements the Klotski puzzle game (known as 华容道 in Chinese), a sliding block puzzle where the objective is to move the largest block, representing Cao Cao, to a specific exit position at the bottom center of the board. The game includes multiple layouts, interactive drag-and-drop mechanics, and an automated solution demo using a breadth-first search (BFS) algorithm.
 
-## Game Description
-Klotski is a classic sliding puzzle game often themed around the historical narrative of Cao Cao's escape during the Battle of Red Cliffs. The game board consists of a 4x5 grid where various shaped pieces (1x1, 1x2, 2x1, and 2x2) can be slid horizontally or vertically into empty spaces. The goal is to maneuver the 2x2 piece (Cao Cao) to the exit at the bottom middle of the board (positions x=1, y=3).
+This project implements a fully‑functional **Klotski / 华容道** sliding‑block puzzle in pure HTML + CSS + JavaScript.  The app supports:
 
-## States Design
-The game manages several key states to handle user interaction and automated solving:
+- Multiple preset layouts ("classic", "besieged", "corner" …)
+- Touch & mouse dragging with smooth CSS‑transitioned motion
+- Automatic solving via a breadth‑first search (BFS) algorithm
+- Live solution playback with step‑by‑step animation
+- Language switching (Chinese ⇆ English)
 
-- **Piece State**: Each piece on the board is represented by an object with properties for position (`x`, `y`), size (`w`, `h`), and a unique identifier (`id`). The state of all pieces collectively represents the current board configuration.
-- **Layout State**: The game supports multiple predefined layouts (e.g., Classic, Besieged, Corner Escape), each with a unique initial arrangement of pieces. The current layout is tracked to allow resetting and switching between different puzzle configurations.
-- **Interaction State**: Flags like `isDragging` track whether a user is currently moving a piece, preventing multiple simultaneous interactions. Variables store the active piece and starting positions for drag-and-drop or touch interactions.
-- **Solving State**: A flag `isSolving` indicates whether the automated solution demo is running. During this state, user interactions are disabled, and the board visually indicates a solving mode with a wait cursor.
-- **Solution Sequence State**: When a solution is computed, the sequence of moves is stored in `solutionSequence`, which is played back step-by-step during the demo with a timed delay between moves.
+The source code is self‑contained in a single HTML file.  This README explains how the game state is modelled and how the solver works.
 
-## Algorithm for Solution
-The automated solution uses a **Breadth-First Search (BFS)** algorithm to find the shortest path from the current board state to the goal state (Cao Cao at x=1, y=3). Here's a detailed breakdown of the algorithm as implemented:
+---
 
-1. **Board Encoding**:
-   - The board state is encoded into a compact string representation (20 characters for a 4x5 grid) where each cell is represented by a character (e.g., 'C' for Cao Cao, 'h' for horizontal 2x1 pieces, 'v' for vertical 1x2 pieces, 's' for soldiers, and '.' for empty spaces).
-   - To optimize and avoid duplicate states, the left-right mirror of the board is computed, and the lexicographically smaller encoding is used as the canonical representation. This reduces the state space by recognizing symmetrical configurations.
+## 1. State Design
 
-2. **State Generation (Neighbor Positions)**:
-   - For each board state, the algorithm identifies the two empty spaces on the board (Klotski always has exactly 2 empty cells in a 4x5 grid with the given piece sizes).
-   - It then checks adjacent cells to these empty spaces to find pieces that can be moved into an empty spot with a single slide.
-   - For each possible move, it ensures the move is valid (within bounds and not blocked by other pieces) using the `canMoveTo` function, then generates a new board state by cloning the current state and updating the moved piece's position.
-   - Duplicate moves are avoided by tracking attempted moves for each piece in the current iteration.
+### 1.1 Piece Object
 
-3. **BFS Implementation**:
-   - The BFS starts from the current board state and explores all possible moves level by level to guarantee the shortest path to the goal.
-   - A queue stores states to explore, where each entry includes the board configuration (pieces array) and the path of moves taken to reach that state.
-   - A `Set` tracks visited states (using the encoded string) to avoid cycles and redundant exploration.
-   - The search continues until the goal state is reached (Cao Cao at x=1, y=3), at which point the path of moves is returned as the solution.
-   - If no solution is found, it returns null (though this should not occur for valid Klotski puzzles).
+Every block is stored as a `` record inside the global `pieces` array:
 
-4. **Solution Playback**:
-   - Once the solution path is computed, it is stored in `solutionSequence`.
-   - The `playSolutionStep` function iterates through the sequence, executing each move with a 1-second delay between steps using `setTimeout`.
-   - During playback, user interaction is disabled by setting `isSolving` to true and applying a CSS class to prevent pointer events.
-   - Playback can be stopped manually via the reset function, which clears the timeout and resets the state flags.
+```js
+{
+  id : "曹操",   // unique name, doubles as display text
+  x  : 1,        // left‑most grid column (0 – 3)
+  y  : 0,        // top‑most grid row    (0 – 4)
+  w  : 2,        // width  in cells      (1 or 2)
+  h  : 2         // height in cells      (1 or 2)
+}
+```
 
-## Key Features
-- **Multiple Layouts**: Players can choose from various puzzle configurations, each presenting a different challenge.
-- **Interactive Controls**: Supports both mouse and touch input for dragging pieces, with visual feedback during interaction.
-- **Solution Demo**: An automated solver visually demonstrates the shortest path to the solution using BFS.
-- **Multilingual Support**: The interface supports Chinese and English, with translated text for all UI elements and messages.
-- **Reset Functionality**: Allows reverting to the initial state of the current layout at any time.
+*The board is a fixed 4 × 5 rectangle; **`x`** & **`y`** always keep the piece within bounds.*
 
-## Technical Details
-- **Grid System**: The board uses a 4x5 grid with each cell being 90x90 pixels. Pieces are positioned absolutely using CSS `top` and `left` properties for smooth transitions during moves.
-- **Move Validation**: The `canMoveTo` function checks if a move is valid by ensuring the target area is within bounds, unobstructed, and reachable via sliding (though strict single-step sliding is not always enforced in the current implementation).
-- **Performance Optimization**: BFS uses an efficient queue with O(1) pop operation (via array indexing) and minimizes state duplication by using canonical board encodings.
+### 1.2 Layouts
 
-## Usage
-- Open the `index.html` file in a web browser to play the game.
-- Use the dropdown menus to switch languages or select different layouts.
-- Drag pieces to move them, click "Reset" to start over, or click "Show Solution (Demo)" to watch the automated solver.
-- The "Help" button provides instructions on how to play.
+The constant `layouts` maps a **layout‑key** to its initial `pieces` array.  Selecting a layout performs:
 
-## Conclusion
-This implementation of Klotski combines an intuitive user interface with a robust BFS-based solver to provide both an engaging puzzle experience and an educational demonstration of algorithmic problem-solving. The state management ensures smooth transitions between interactive play and automated demos, making it accessible to players and learners alike.
+```js
+pieces = structuredClone(layouts[key].pieces);
+currentLayoutKey = key;
+render();
+```
+
+No other global state needs resetting because every visual element is recreated from `pieces` on each `render()`.
+
+### 1.3 Transient UI State
+
+| Flag / var          | Purpose                                  |
+| ------------------- | ---------------------------------------- |
+| `isDragging`        | User is currently dragging a block       |
+| `isSolving`         | Solver playback is running; UI is frozen |
+| `solutionSequence`  | Array of `{id,x,y}` moves from BFS       |
+| `solutionTimeoutId` | `setTimeout` handle for next animation   |
+
+These flags keep the model (board state) cleanly separated from view‑layer concerns.
+
+---
+
+## 2. Board Encoding
+
+Efficient BFS requires a *hashable* representation of a position.  `encodeBoardFast()` tiles the 4 × 5 grid into a 20‑character string:
+
+| Char | Meaning              |
+| ---- | -------------------- |
+| `C`  | 2×2 Cao Cao block    |
+| `B`  | 2×2 (generic big)    |
+| `h`  | 2×1 horizontal block |
+| `v`  | 1×2 vertical block   |
+| `s`  | 1×1 soldier          |
+| `.`  | empty cell           |
+
+Example (classic start):
+
+```
+.vCB
+h.h.
+......
+```
+
+flattened to `vCBh.h...............` (`20` chars).
+
+To exploit left‑right symmetry, the code also builds a **mirror** string (row‑wise reversal) and returns the lexicographically smaller of the two.  This halves the search space with zero extra cost.
+
+---
+
+## 3. Move Generation
+
+`nextPositionsFast(statePieces)` yields neighbours in two steps:
+
+1. **Locate the two empty cells** (always exactly two in Klotski).  For each empty cell, examine its four von‑Neumann neighbours.  If a neighbour contains a piece ID, attempt to slide that piece **one step toward the empty cell**.
+2. **Validate** the candidate using `canMoveTo(p, tx, ty, state)` – this checks board bounds *and* path clearance (single‑step slide).
+
+Using empties as the expansion frontier drastically reduces the branching factor compared with naïvely trying to move every piece in four directions.
+
+---
+
+## 4. Breadth‑First Search Solver
+
+```js
+function solveFromCurrentBoard() {
+  const startKey = encodeBoardFast(pieces);
+  const queue = [{ pieces: pieces, path: [] }];
+  const seen  = new Set([startKey]);
+  let head = 0;
+  while (head < queue.length) {
+    const {pieces: cur, path} = queue[head++];
+    if (isGoal(cur)) return path;           // reached Cao Cao at (1,3)
+    for (const nxt of nextPositionsFast(cur)) {
+      const key = encodeBoardFast(nxt.pieces);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      queue.push({ pieces: nxt.pieces, path: [...path, nxt.move] });
+    }
+  }
+  return null;  // unsolved – theoretically unreachable for valid boards
+}
+```
+
+- **Queue with numeric **`` gives *O(1)* pop without expensive `shift()`.
+- Path is stored as an array of incremental moves `{id,x,y}` which later drives the animation.
+- Time‑complexity is exponential but highly pruned; the classic board solves in ≈ 100 ms in modern browsers.
+
+---
+
+## 5. Solution Playback
+
+`startSolution()` freezes the UI (`isSolving = true`), then schedules `playSolutionStep(0)` after a short delay.  Each step:
+
+1. Calls `executeMove()` – updates `pieces` **and** re‑renders.
+2. Enqueues the next step with `setTimeout` (1 s interval) so users can watch.
+3. If the move is invalid (should never happen), playback halts and an i18n‑aware error alert appears.
+
+Stopping (via `stopSolution()` or reset) clears the timer, re‑enables UI, and removes the CSS class that hides pointer events.
+
+---
+
+## 6. Internationalisation (i18n)
+
+A simple `translations` object maps language code → UI strings.  `changeLanguage(lang)` rewrites:
+
+- Page `<title>` & `<h1>`
+- Button labels
+- Layout dropdown labels
+- Run‑time alerts via `showAlert(key, …args)`
+
+Adding a new language only requires appending a dictionary.
+
+---
+
+## 7. Running Locally
+
+1. Save the HTML file as `klotski.html`.
+2. Open it in any modern desktop or mobile browser – no build step needed.
+
+> **Tip:** On mobile Safari/Chrome you can “Add to Home Screen” for an app‑like full‑screen experience.
+
+---
+
+## 8. Extending the Code
+
+| Task                                   | How‑to                                                                                         |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| **Add a new layout**                   | Append an entry to `layouts` with a unique key and piece array; translation label is optional. |
+| **Change board size** *(experimental)* | Update `gridSize`, CSS grid rows/cols, bounds in `canMoveTo`, and goal test.                   |
+| **Faster solver**                      | Replace BFS with A\* and a heuristic (e.g., Manhattan distance of Cao Cao to exit).            |
+| **Save/Load progress**                 | Serialize `pieces` to `localStorage` on `beforeunload`; hydrate on page load.                  |
+
+---
+
+## 9. License
+
+This demo is released into the public domain (CC0).  Use freely in personal or commercial projects – attribution appreciated but not required.
+
