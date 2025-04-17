@@ -89,6 +89,9 @@
         <option value="classic">经典布局</option>
         <option value="troops3">兵分三路</option>
         <option value="besieged">四面楚歌</option>
+        <option value="corner">左上逍遥</option>
+        <option value="crossroad">纵横天下</option>
+        <option value="hengdao">横刀立马</option>
     </select>
 </div>
 
@@ -98,445 +101,71 @@
   const resetButton = document.getElementById("resetButton");
   const gridSize = 90;
 
-  /* ========= 40 Classic Klotski Layouts ========= */
+  /* ========= 关卡列表 ========= */
   const layouts = {
-    /* 1 Across the Blade (横刀立马) */
-    "Across the Blade": {
+    /* ---- 现有 ---- */
+    classic: {
       pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"黄忠", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"张飞", x:3, y:2, w:1, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
+        { id:"曹操",x:1,y:0,w:2,h:2 },
+        { id:"关羽",x:1,y:2,w:2,h:1 },
+        { id:"张飞",x:0,y:0,w:1,h:2 },
+        { id:"赵云",x:3,y:0,w:1,h:2 },
+        { id:"马超",x:0,y:2,w:1,h:2 },
+        { id:"黄忠",x:3,y:2,w:1,h:2 },
+        { id:"卒1", x:0,y:4,w:1,h:1 },
+        { id:"卒2", x:1,y:3,w:1,h:1 },
+        { id:"卒3", x:2,y:3,w:1,h:1 },
+        { id:"卒4", x:3,y:4,w:1,h:1 }
       ]
     },
-    /* 2 Calm Command (指挥若定) */
-    "Calm Command": {
+    /* 兵分三路 */
+    troops3: {
       pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"黄忠", x:0, y:2, w:1, h:2 },
-        { id:"马超", x:3, y:2, w:1, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"卒1", x:1, y:3, w:1, h:1 },
-        { id:"卒2", x:2, y:3, w:1, h:1 },
-        { id:"卒3", x:0, y:4, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
+        { id:"曹操",x:1,y:0,w:2,h:2 },
+        { id:"关羽",x:1,y:2,w:2,h:1 },
+        { id:"张飞",x:0,y:0,w:1,h:2 },
+        { id:"赵云",x:3,y:0,w:1,h:2 },
+        { id:"马超",x:0,y:2,w:1,h:2 },
+        { id:"黄忠",x:3,y:2,w:1,h:2 },
+        { id:"卒1", x:0,y:4,w:1,h:1 },
+        { id:"卒2", x:1,y:3,w:1,h:1 },
+        { id:"卒3", x:2,y:3,w:1,h:1 },
+        { id:"卒4", x:3,y:4,w:1,h:1 }
       ]
     },
-    /* 3 Cao & Bodyguards (将拥曹营) */
-    "Cao & Bodyguards": {
+    /* 四面楚歌 */
+    besieged: {
       pieces: [
         { id:"曹操", x:1, y:1, w:2, h:2 },
-        { id:"关羽", x:1, y:0, w:2, h:1 },
         { id:"张飞", x:0, y:0, w:1, h:2 },
         { id:"赵云", x:3, y:0, w:1, h:2 },
         { id:"马超", x:0, y:2, w:1, h:2 },
         { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:1, y:3, w:1, h:1 },
-        { id:"卒2", x:2, y:3, w:1, h:1 },
-        { id:"卒3", x:0, y:4, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 4 Advance in Line (齐头并进) */
-    "Advance in Line": {
-      pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"黄忠", x:0, y:2, w:1, h:2 },
-        { id:"马超", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:1, y:3, w:1, h:1 },
-        { id:"卒2", x:2, y:3, w:1, h:1 },
-        { id:"卒3", x:0, y:4, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 5 Three-Way Split (兵分三路) */
-    "Three-Way Split": {
-      pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 6 Storm on All Sides (四面楚歌) */
-    "Storm on All Sides": {
-      pieces: [
-        { id:"曹操", x:1, y:1, w:2, h:2 },
         { id:"关羽", x:1, y:3, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
         { id:"卒1", x:1, y:0, w:1, h:1 },
         { id:"卒2", x:2, y:0, w:1, h:1 },
         { id:"卒3", x:0, y:4, w:1, h:1 },
         { id:"卒4", x:3, y:4, w:1, h:1 }
       ]
     },
-    /* 7 Five Passes (五关六将) */
-    "Five Passes": {
+    /* ================= 新增三关 ================= */
+    /* 1. corner — 左上逍遥：曹操置于左上角 */
+    corner: {
       pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
+        { id:"曹操", x:0, y:0, w:2, h:2 },
+        { id:"关羽", x:0, y:2, w:2, h:1 },
+        { id:"张飞", x:2, y:0, w:1, h:2 },
         { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
+        { id:"马超", x:2, y:2, w:1, h:2 },
         { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
+        { id:"卒1", x:0, y:3, w:1, h:1 },
         { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 8 Surrounded (重重包围) */
-    "Surrounded": {
-      pieces: [
-        { id:"曹操", x:1, y:1, w:2, h:2 },
-        { id:"关羽", x:1, y:0, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 9 Blockade (封锁) */
-    "Blockade": {
-      pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 10 Diagonal Defense (斜线布防) */
-    "Diagonal Defense": {
-      pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 11 Central Bloom (中心开花) */
-    "Central Bloom": {
-      pieces: [
-        { id:"曹操", x:1, y:1, w:2, h:2 },
-        { id:"关羽", x:1, y:0, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 12 Flanking Maneuver (侧翼包抄) */
-    "Flanking Maneuver": {
-      pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 13 Double Wing (双翼合围) */
-    "Double Wing": {
-      pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 14 Fortress Defense (堡垒防御) */
-    "Fortress Defense": {
-      pieces: [
-        { id:"曹操", x:1, y:1, w:2, h:2 },
-        { id:"关羽", x:1, y:0, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 15 Ambush (埋伏) */
-    "Ambush": {
-      pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 16 Tight Spot (紧要关头) */
-    "Tight Spot": {
-      pieces: [
-        { id:"曹操", x:1, y:1, w:2, h:2 },
-        { id:"关羽", x:1, y:0, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 17 River Crossing (过河拆桥) */
-    "River Crossing": {
-      pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 18 Strategic Retreat (战略撤退) */
-    "Strategic Retreat": {
-      pieces: [
-        { id:"曹操", x:1, y:1, w:2, h:2 },
-        { id:"关羽", x:1, y:0, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 19 Border Defense (边境防御) */
-    "Border Defense": {
-      pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 20 Encirclement (合围) */
-    "Encirclement": {
-      pieces: [
-        { id:"曹操", x:1, y:1, w:2, h:2 },
-        { id:"关羽", x:1, y:0, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 21 Pincer Attack (钳形攻势) */
-    "Pincer Attack": {
-      pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 22 Defensive Line (防线) */
-    "Defensive Line": {
-      pieces: [
-        { id:"曹操", x:1, y:1, w:2, h:2 },
-        { id:"关羽", x:1, y:0, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 23 Rear Guard (后卫) */
-    "Rear Guard": {
-      pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 24 Frontal Assault (正面强攻) */
-    "Frontal Assault": {
-      pieces: [
-        { id:"曹操", x:1, y:1, w:2, h:2 },
-        { id:"关羽", x:1, y:0, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 25 Tactical Shift (战术转移) */
-    "Tactical Shift": {
-      pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 26 Enclosed Defense (封闭防御) */
-    "Enclosed Defense": {
-      pieces: [
-        { id:"曹操", x:1, y:1, w:2, h:2 },
-        { id:"关羽", x:1, y:0, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 27 Breakout (突围) */
-    "Breakout": {
-      pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 28 Besieged (四面楚歌) */
-    "Besieged": {
-      pieces: [
-        { id:"曹操", x:1, y:1, w:2, h:2 },
-        { id:"关羽", x:1, y:3, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:1, y:0, w:1, h:1 },
-        { id:"卒2", x:2, y:0, w:1, h:1 },
         { id:"卒3", x:0, y:4, w:1, h:1 },
         { id:"卒4", x:3, y:4, w:1, h:1 }
       ]
     },
-    /* 29 Cornered (走投无路) */
-    "Cornered": {
-      pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 30 Impasse (僵局) */
-    "Impasse": {
+    /* 2. crossroad — 纵横天下：曹操居中，关羽卧顶 */
+    crossroad: {
       pieces: [
         { id:"曹操", x:1, y:1, w:2, h:2 },
         { id:"关羽", x:1, y:0, w:2, h:1 },
@@ -550,160 +179,25 @@
         { id:"卒4", x:3, y:4, w:1, h:1 }
       ]
     },
-    /* 31 Stalemate (对峙) */
-    "Stalemate": {
+    /* 3. hengdao — 横刀立马：关羽直立守中 */
+    hengdao: {
       pieces: [
         { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
+        { id:"关羽", x:1, y:2, w:1, h:2 },
         { id:"张飞", x:0, y:0, w:1, h:2 },
         { id:"赵云", x:3, y:0, w:1, h:2 },
         { id:"马超", x:0, y:2, w:1, h:2 },
         { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 32 Narrow Escape (险路逃生) */
-    "Narrow Escape": {
-      pieces: [
-        { id:"曹操", x:1, y:1, w:2, h:2 },
-        { id:"关羽", x:1, y:0, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 33 Bottleneck (瓶颈) */
-    "Bottleneck": {
-      pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 34 Chokepoint (咽喉要道) */
-    "Chokepoint": {
-      pieces: [
-        { id:"曹操", x:1, y:1, w:2, h:2 },
-        { id:"关羽", x:1, y:0, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 35 Gatekeeper (守门员) */
-    "Gatekeeper": {
-      pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 36 Last Stand (最后一搏) */
-    "Last Stand": {
-      pieces: [
-        { id:"曹操", x:1, y:1, w:2, h:2 },
-        { id:"关羽", x:1, y:0, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 37 Final Push (最后冲刺) */
-    "Final Push": {
-      pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 38 Desperate Measures (孤注一掷) */
-    "Desperate Measures": {
-      pieces: [
-        { id:"曹操", x:1, y:1, w:2, h:2 },
-        { id:"关羽", x:1, y:0, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 39 Endgame (终局) */
-    "Endgame": {
-      pieces: [
-        { id:"曹操", x:1, y:0, w:2, h:2 },
-        { id:"关羽", x:1, y:2, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
-        { id:"卒4", x:3, y:4, w:1, h:1 }
-      ]
-    },
-    /* 40 Victory Lap (胜利巡礼) */
-    "Victory Lap": {
-      pieces: [
-        { id:"曹操", x:1, y:1, w:2, h:2 },
-        { id:"关羽", x:1, y:0, w:2, h:1 },
-        { id:"张飞", x:0, y:0, w:1, h:2 },
-        { id:"赵云", x:3, y:0, w:1, h:2 },
-        { id:"马超", x:0, y:2, w:1, h:2 },
-        { id:"黄忠", x:3, y:2, w:1, h:2 },
-        { id:"卒1", x:0, y:4, w:1, h:1 },
-        { id:"卒2", x:1, y:3, w:1, h:1 },
-        { id:"卒3", x:2, y:3, w:1, h:1 },
+        { id:"卒1", x:2, y:2, w:1, h:1 },
+        { id:"卒2", x:2, y:3, w:1, h:1 },
+        { id:"卒3", x:0, y:4, w:1, h:1 },
         { id:"卒4", x:3, y:4, w:1, h:1 }
       ]
     }
   };
   
   // --- Game State (Mutable) ---
-  let currentLayoutKey = 'Across the Blade';          // 默认
+  let currentLayoutKey = 'classic';          // 默认
   let pieces = structuredClone(layouts[currentLayoutKey].pieces);
 
   // --- Solution Sequence (Dynamically computed using BFS) ---
@@ -1180,46 +674,12 @@
                 "点击并拖动方块来移动它们。方块只能沿水平或垂直方向滑动，不能跳过其他方块。\n\n" +
                 "使用重置按钮返回初始状态，使用显示解决方案按钮查看自动求解演示。",
       layoutNames: {
-        "Across the Blade": "横刀立马",
-        "Calm Command": "指挥若定",
-        "Cao & Bodyguards": "将拥曹营",
-        "Advance in Line": "齐头并进",
-        "Three-Way Split": "兵分三路",
-        "Storm on All Sides": "四面楚歌",
-        "Five Passes": "五关六将",
-        "Surrounded": "重重包围",
-        "Blockade": "封锁",
-        "Diagonal Defense": "斜线布防",
-        "Central Bloom": "中心开花",
-        "Flanking Maneuver": "侧翼包抄",
-        "Double Wing": "双翼合围",
-        "Fortress Defense": "堡垒防御",
-        "Ambush": "埋伏",
-        "Tight Spot": "紧要关头",
-        "River Crossing": "过河拆桥",
-        "Strategic Retreat": "战略撤退",
-        "Border Defense": "边境防御",
-        "Encirclement": "合围",
-        "Pincer Attack": "钳形攻势",
-        "Defensive Line": "防线",
-        "Rear Guard": "后卫",
-        "Frontal Assault": "正面强攻",
-        "Tactical Shift": "战术转移",
-        "Enclosed Defense": "封闭防御",
-        "Breakout": "突围",
-        "Besieged": "四面楚歌",
-        "Cornered": "走投无路",
-        "Impasse": "僵局",
-        "Stalemate": "对峙",
-        "Narrow Escape": "险路逃生",
-        "Bottleneck": "瓶颈",
-        "Chokepoint": "咽喉要道",
-        "Gatekeeper": "守门员",
-        "Last Stand": "最后一搏",
-        "Final Push": "最后冲刺",
-        "Desperate Measures": "孤注一掷",
-        "Endgame": "终局",
-        "Victory Lap": "胜利巡礼"
+        classic: "经典布局",
+        troops3: "兵分三路",
+        besieged: "四面楚歌",
+        corner: "左上逍遥",
+        crossroad: "纵横天下",
+        hengdao: "横刀立马"
       }
     },
     en: {
@@ -1237,46 +697,12 @@
                 "Click and drag the blocks to move them. Blocks can only slide horizontally or vertically, and cannot jump over others.\n\n" +
                 "Use the Reset button to return to the initial state, and the Show Solution button to see an automated solving demo.",
       layoutNames: {
-        "Across the Blade": "Across the Blade",
-        "Calm Command": "Calm Command",
-        "Cao & Bodyguards": "Cao & Bodyguards",
-        "Advance in Line": "Advance in Line",
-        "Three-Way Split": "Three-Way Split",
-        "Storm on All Sides": "Storm on All Sides",
-        "Five Passes": "Five Passes",
-        "Surrounded": "Surrounded",
-        "Blockade": "Blockade",
-        "Diagonal Defense": "Diagonal Defense",
-        "Central Bloom": "Central Bloom",
-        "Flanking Maneuver": "Flanking Maneuver",
-        "Double Wing": "Double Wing",
-        "Fortress Defense": "Fortress Defense",
-        "Ambush": "Ambush",
-        "Tight Spot": "Tight Spot",
-        "River Crossing": "River Crossing",
-        "Strategic Retreat": "Strategic Retreat",
-        "Border Defense": "Border Defense",
-        "Encirclement": "Encirclement",
-        "Pincer Attack": "Pincer Attack",
-        "Defensive Line": "Defensive Line",
-        "Rear Guard": "Rear Guard",
-        "Frontal Assault": "Frontal Assault",
-        "Tactical Shift": "Tactical Shift",
-        "Enclosed Defense": "Enclosed Defense",
-        "Breakout": "Breakout",
-        "Besieged": "Besieged",
-        "Cornered": "Cornered",
-        "Impasse": "Impasse",
-        "Stalemate": "Stalemate",
-        "Narrow Escape": "Narrow Escape",
-        "Bottleneck": "Bottleneck",
-        "Chokepoint": "Chokepoint",
-        "Gatekeeper": "Gatekeeper",
-        "Last Stand": "Last Stand",
-        "Final Push": "Final Push",
-        "Desperate Measures": "Desperate Measures",
-        "Endgame": "Endgame",
-        "Victory Lap": "Victory Lap"
+        classic: "Classic Layout",
+        troops3: "Troops in Three",
+        besieged: "Besieged",
+        corner: "Corner Escape",
+        crossroad: "Crossroad",
+        hengdao: "Guan's Charge"
       }
     }
   };
