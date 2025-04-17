@@ -80,6 +80,7 @@
 <div id="controls">
     <button id="resetButton">重置</button>
     <button id="solveButton">显示解决方案 (演示)</button>
+    <button id="helpButton">帮助</button>
     <select id="languageSelect" onchange="changeLanguage(this.value)">
         <option value="zh">中文</option>
         <option value="en">English</option>
@@ -544,6 +545,10 @@
   // --- ADDED: Button Listeners ---
   solveButton.addEventListener('click', startSolution);
   resetButton.addEventListener('click', resetBoard);
+  document.getElementById('helpButton').addEventListener('click', function() {
+    const texts = translations[currentLanguage];
+    alert(texts.helpTitle + "\n\n" + texts.helpText);
+  });
 
   // --- Language Support ---
   const translations = {
@@ -552,18 +557,28 @@
       gameTitle: "华容道游戏",
       resetButton: "重置",
       solveButton: "显示解决方案 (演示)",
+      helpButton: "帮助",
       congratsMessage: "恭喜过关！",
       solutionComplete: "解决方案完成！(已到达目标状态)",
-      solutionError: "解决方案错误：在步骤 {0} 处对 {1} 的移动无效。播放已停止。"
+      solutionError: "解决方案错误：在步骤 {0} 处对 {1} 的移动无效。播放已停止。",
+      helpTitle: "如何玩华容道游戏",
+      helpText: "目标是将最大的方块（曹操）移动到棋盘底部的中间位置。\n\n" +
+                "点击并拖动方块来移动它们。方块只能沿水平或垂直方向滑动，不能跳过其他方块。\n\n" +
+                "使用重置按钮返回初始状态，使用显示解决方案按钮查看自动求解演示。"
     },
     en: {
       pageTitle: "Klotski Game (With Solution Demo)",
       gameTitle: "Klotski Game",
       resetButton: "Reset",
       solveButton: "Show Solution (Demo)",
+      helpButton: "Help",
       congratsMessage: "Congratulations, you passed!",
       solutionComplete: "Solution Complete! (Reached target state)",
-      solutionError: "Solution Error: Invalid move at step {0} for {1}. Playback stopped."
+      solutionError: "Solution Error: Invalid move at step {0} for {1}. Playback stopped.",
+      helpTitle: "How to Play Klotski",
+      helpText: "The goal is to move the largest block (Cao Cao) to the middle bottom of the board.\n\n" +
+                "Click and drag the blocks to move them. Blocks can only slide horizontally or vertically, and cannot jump over others.\n\n" +
+                "Use the Reset button to return to the initial state, and the Show Solution button to see an automated solving demo."
     }
   };
 
@@ -580,6 +595,7 @@
     document.getElementById('gameTitle').textContent = texts.gameTitle;
     document.getElementById('resetButton').textContent = texts.resetButton;
     document.getElementById('solveButton').textContent = texts.solveButton;
+    document.getElementById('helpButton').textContent = texts.helpButton;
   }
 
   // Override alert messages to use the correct language
