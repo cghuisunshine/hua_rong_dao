@@ -129,19 +129,23 @@
         { id:"卒4", x:3,y:4,w:1,h:1 }
       ]
     },
-    /* 四面楚歌 ── 曹操居中，关羽横在顶行，其余将领四角合围 */
+    /* 四面楚歌 ── 曹操居中，关羽横在第4行，其余将领四角合围 */
     besieged: {
       pieces: [
-        { id:"曹操",x:1,y:1,w:2,h:2 },
-        { id:"关羽",x:1,y:0,w:2,h:1 },
-        { id:"张飞",x:0,y:0,w:1,h:2 },
-        { id:"赵云",x:3,y:0,w:1,h:2 },
-        { id:"马超",x:0,y:2,w:1,h:2 },
-        { id:"黄忠",x:3,y:2,w:1,h:2 },
-        { id:"卒1", x:1,y:3,w:1,h:1 },
-        { id:"卒2", x:2,y:3,w:1,h:1 },
-        { id:"卒3", x:0,y:4,w:1,h:1 },
-        { id:"卒4", x:3,y:4,w:1,h:1 }
+        /* ① 主将 */
+        { id:"曹操", x:1, y:1, w:2, h:2 },
+        /* ② 四面“楚歌”的四大将——把曹操围在四角 */
+        { id:"张飞", x:0, y:0, w:1, h:2 },
+        { id:"赵云", x:3, y:0, w:1, h:2 },
+        { id:"马超", x:0, y:2, w:1, h:2 },
+        { id:"黄忠", x:3, y:2, w:1, h:2 },
+        /* ③ 关羽横刀立马在第4行 (y=3) */
+        { id:"关羽", x:1, y:3, w:2, h:1 },
+        /* ④ 四个小兵：两上两角 */
+        { id:"卒1", x:1, y:0, w:1, h:1 },
+        { id:"卒2", x:2, y:0, w:1, h:1 },
+        { id:"卒3", x:0, y:4, w:1, h:1 },
+        { id:"卒4", x:3, y:4, w:1, h:1 }
       ]
     }
   };
@@ -431,7 +435,7 @@
 
       const autoPath = solveFromCurrentBoard();
       if (!autoPath) {
-          showAlert("solutionError", "N/A", "N/A");
+          showAlert("noSolution");
           return;
       }
       solutionSequence = autoPath; // replaces the old hard-coded stub
@@ -609,6 +613,7 @@
       congratsMessage: "恭喜过关！",
       solutionComplete: "解决方案完成！(已到达目标状态)",
       solutionError: "解决方案错误：在步骤 {0} 处对 {1} 的移动无效。播放已停止。",
+      noSolution: "这个布局无解喔，换一局试试看？",
       helpTitle: "如何玩华容道游戏",
       helpText: "目标是将最大的方块（曹操）移动到棋盘底部的中间位置。\n\n" +
                 "点击并拖动方块来移动它们。方块只能沿水平或垂直方向滑动，不能跳过其他方块。\n\n" +
@@ -628,6 +633,7 @@
       congratsMessage: "Congratulations, you passed!",
       solutionComplete: "Solution Complete! (Reached target state)",
       solutionError: "Solution Error: Invalid move at step {0} for {1}. Playback stopped.",
+      noSolution: "This layout has no solution. Want to try a different one?",
       helpTitle: "How to Play Klotski",
       helpText: "The goal is to move the largest block (Cao Cao) to the middle bottom of the board.\n\n" +
                 "Click and drag the blocks to move them. Blocks can only slide horizontally or vertically, and cannot jump over others.\n\n" +
