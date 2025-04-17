@@ -111,6 +111,7 @@
         { id:"卒4", x:3,y:4,w:1,h:1 }
       ]
     },
+    
     /* 四面楚歌 */
     besieged: {
       pieces: [
@@ -126,7 +127,8 @@
         { id:"卒4", x:3, y:4, w:1, h:1 }
       ]
     },
-    /* 3. corner — 左上逍遥：曹操置于左上角 */
+    /* ================= 新增三关 ================= */
+    /* 1. corner — 左上逍遥：曹操置于左上角 */
     corner: {
       pieces: [
         { id:"曹操", x:0, y:0, w:2, h:2 },
@@ -141,51 +143,7 @@
         { id:"卒4", x:3, y:4, w:1, h:1 }
       ]
     },
-    /* 4. 横刀立马 – bridge：曹操居中开局 */
-    bridge: {
-      pieces: [
-        { id: "曹操", x: 1, y: 0, w: 2, h: 2 },
-        { id: "张飞", x: 0, y: 0, w: 1, h: 2 },
-        { id: "赵云", x: 3, y: 0, w: 1, h: 2 },
-        { id: "马超", x: 0, y: 2, w: 1, h: 2 },
-        { id: "黄忠", x: 3, y: 2, w: 1, h: 2 },
-        { id: "关羽", x: 1, y: 2, w: 2, h: 1 },
-        { id: "卒1",  x: 1, y: 3, w: 1, h: 1 },
-        { id: "卒2",  x: 2, y: 3, w: 1, h: 1 },
-        { id: "卒3",  x: 0, y: 4, w: 1, h: 1 },
-        { id: "卒4",  x: 3, y: 4, w: 1, h: 1 }
-      ]
-    },
-    /* 5. 兵分三路 – divide：曹操居中下方，出口上方被“关羽”封堵 */
-    divide: {
-      pieces: [
-        { id: "曹操", x: 1, y: 2, w: 2, h: 2 },
-        { id: "关羽", x: 1, y: 1, w: 2, h: 1 },
-        { id: "张飞", x: 0, y: 0, w: 1, h: 2 },
-        { id: "赵云", x: 3, y: 0, w: 1, h: 2 },
-        { id: "马超", x: 0, y: 2, w: 1, h: 2 },
-        { id: "黄忠", x: 3, y: 2, w: 1, h: 2 },
-        { id: "卒1",  x: 1, y: 0, w: 1, h: 1 },
-        { id: "卒2",  x: 2, y: 0, w: 1, h: 1 },
-        { id: "卒3",  x: 0, y: 4, w: 1, h: 1 },
-        { id: "卒4",  x: 3, y: 4, w: 1, h: 1 }
-      ]
-    },
-    /* 6. 左侧突围 – flank：曹操贴左侧，出口右下可尝试速通 */
-    flank: {
-      pieces: [
-        { id: "曹操", x: 0, y: 1, w: 2, h: 2 },
-        { id: "张飞", x: 0, y: 0, w: 1, h: 2 },
-        { id: "赵云", x: 3, y: 0, w: 1, h: 2 },
-        { id: "马超", x: 2, y: 1, w: 1, h: 2 },
-        { id: "黄忠", x: 3, y: 2, w: 1, h: 2 },
-        { id: "关羽", x: 1, y: 3, w: 2, h: 1 },
-        { id: "卒1",  x: 2, y: 0, w: 1, h: 1 },
-        { id: "卒2",  x: 0, y: 4, w: 1, h: 1 },
-        { id: "卒3",  x: 2, y: 4, w: 1, h: 1 },
-        { id: "卒4",  x: 3, y: 4, w: 1, h: 1 }
-      ]
-    }
+    
   };
   
   // --- Game State (Mutable) ---
@@ -681,10 +639,7 @@
         besieged: "四面楚歌",
         corner: "左上逍遥",
         crossroad: "纵横天下",
-        hengdao: "横刀立马",
-        bridge: "横刀立马",
-        divide: "兵分三路",
-        flank: "左侧突围"
+        hengdao: "横刀立马"
       }
     },
     en: {
@@ -707,10 +662,7 @@
         besieged: "Besieged",
         corner: "Corner Escape",
         crossroad: "Crossroad",
-        hengdao: "Guan's Charge",
-        bridge: "Bridge Formation",
-        divide: "Divide and Conquer",
-        flank: "Flank Attack"
+        hengdao: "Guan's Charge"
       }
     }
   };
