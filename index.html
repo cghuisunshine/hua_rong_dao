@@ -106,18 +106,8 @@
   // Use structuredClone for a deep copy to prevent mutation of initialPieces
   let pieces = structuredClone(initialPieces);
 
-  // --- ADDED: Solution Sequence (Short Demo - Replace with full 81+ step solution) ---
-  const solutionSequence = [
-    { id: "卒2", x: 1, y: 4 }, // Soldier 2 Down
-    { id: "卒3", x: 2, y: 4 }, // Soldier 3 Down
-    { id: "关羽", x: 1, y: 3 }, // Guan Yu Down
-    { id: "马超", x: 1, y: 2 }, // Ma Chao Right
-    { id: "黄忠", x: 2, y: 2 }, // Huang Zhong Left
-    { id: "赵云", x: 3, y: 1 }, // Zhao Yun Down
-    { id: "张飞", x: 0, y: 1 }, // Zhang Fei Down
-    { id: "曹操", x: 1, y: 1 }, // Cao Cao Down
-    // ... MANY MORE STEPS NEEDED FOR A FULL SOLUTION ...
-  ];
+  // --- Solution Sequence (Dynamically computed using BFS) ---
+  let solutionSequence = [];
 
   // --- State Flags ---
   let isDragging = false;
@@ -283,20 +273,69 @@
       }, 1000); // 1000ms = 1 second interval
   }
 
+  /* --- NEW: Generic state → string helper ------------------------------- */
+  function encodeBoard(piecesArr) {
+      // sort so that identical soldiers / tall blocks don’t permute the key
+      const ordered = [...piecesArr].sort((a, b) => a.id.localeCompare(b.id));
+      return ordered.map(p => `${p.x}${p.y}`).join('|');
+  }
+
+  /* --- NEW: enumerate every legal single-square slide from a position ---- */
+  function* nextPositions(statePieces) {
+      for (const p of statePieces) {
+          // Try four directions
+          const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+          for (const [dx, dy] of dirs) {
+              const nx = p.x + dx, ny = p.y + dy;
+              if (canMoveTo(p, nx, ny)) {
+                  // clone state & the moving piece
+                  const newPieces = structuredClone(statePieces);
+                  const np = newPieces.find(k => k.id === p.id);
+                  np.x = nx; np.y = ny;
+                  yield { pieces: newPieces, move: { id: p.id, x: nx, y: ny } };
+              }
+          }
+      }
+  }
+
+  /* --- NEW: on-demand BFS solver ---------------------------------------- */
+  function solveFromCurrentBoard() {
+      const startKey = encodeBoard(pieces);
+      const queue = [{ pieces: structuredClone(pieces), path: [] }];
+      const seen = new Set([startKey]);
+
+      while (queue.length) {
+          const { pieces: curPieces, path } = queue.shift();
+          // finish when Cao Cao reaches (1,3)
+          const cao = curPieces.find(p => p.id === "曹操");
+          if (cao.x === 1 && cao.y === 3) return path; // solved!
+
+          for (const { pieces: nextPieces, move } of nextPositions(curPieces)) {
+              const key = encodeBoard(nextPieces);
+              if (!seen.has(key)) {
+                  seen.add(key);
+                  queue.push({ pieces: nextPieces, path: [...path, move] });
+              }
+          }
+      }
+      return null; // no solution (should never happen with a legal board)
+  }
+
   function startSolution() {
-      if (isSolving) return; // Already solving
+      if (isSolving) return;
 
-      console.log("Starting solution playback...");
-      resetBoard(); // Start from the initial configuration
-
+      const autoPath = solveFromCurrentBoard();
+      if (!autoPath) {
+          alert("I couldn't find a solution from the current position 🤔");
+          return;
+      }
+      solutionSequence = autoPath; // replaces the old hard-coded stub
       isSolving = true;
-      solveButton.disabled = true; // Disable button during playback
-      resetButton.disabled = true; // Disable reset during playback
-      board.classList.add('solving'); // Add class to disable pointer events via CSS
-      render(); // Render immediately to reflect disabled state visually
-
-      // Start the sequence after a brief delay
-      solutionTimeoutId = setTimeout(() => playSolutionStep(0), 500);
+      solveButton.disabled = true;
+      resetButton.disabled = true;
+      board.classList.add('solving');
+      render();
+      solutionTimeoutId = setTimeout(() => playSolutionStep(0), 300);
   }
 
   function stopSolution() {
