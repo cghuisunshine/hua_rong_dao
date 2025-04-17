@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>华容道游戏 (With Solution Demo)</title>
+  <title id="pageTitle">华容道游戏 (With Solution Demo)</title>
   <style>
     /* --- Existing styles from previous version --- */
     body {
@@ -74,12 +74,16 @@
 </head>
 <body>
 
-<h1>华容道游戏</h1>
+<h1 id="gameTitle">华容道游戏</h1>
 <div id="board"></div>
 
 <div id="controls">
-    <button id="resetButton">Reset</button>
-    <button id="solveButton">Show Solution (Demo)</button>
+    <button id="resetButton">重置</button>
+    <button id="solveButton">显示解决方案 (演示)</button>
+    <select id="languageSelect" onchange="changeLanguage(this.value)">
+        <option value="zh">中文</option>
+        <option value="en">English</option>
+    </select>
 </div>
 
 <script>
@@ -217,9 +221,9 @@
       if (piece.id === "曹操" && piece.x === 1 && piece.y === 3) {
           if (isSolving) { // If solved via automation
                stopSolution(); // Stop further steps if any
-               setTimeout(() => alert("Solution Complete! (Reached target state)"), 100);
+               setTimeout(() => showAlert("solutionComplete"), 100);
           } else {
-               setTimeout(() => alert("恭喜过关！"), 100);
+               setTimeout(() => showAlert("congratsMessage"), 100);
           }
       }
       return true; // Move successful
@@ -263,7 +267,7 @@
       if (!executeMove(pieceToMove, move.x, move.y)) {
             console.error(`Solution Error: Invalid move at step ${stepIndex + 1}. Halting.`);
             stopSolution();
-            alert(`Solution Error: Invalid move at step ${stepIndex + 1} for ${move.id}. Playback stopped.`);
+            showAlert("solutionError", stepIndex + 1, move.id);
             return;
       }
 
@@ -378,7 +382,7 @@
 
       const autoPath = solveFromCurrentBoard();
       if (!autoPath) {
-          alert("I couldn't find a solution from the current position 🤔");
+          showAlert("solutionError", "N/A", "N/A");
           return;
       }
       solutionSequence = autoPath; // replaces the old hard-coded stub
@@ -541,8 +545,57 @@
   solveButton.addEventListener('click', startSolution);
   resetButton.addEventListener('click', resetBoard);
 
+  // --- Language Support ---
+  const translations = {
+    zh: {
+      pageTitle: "华容道游戏 (With Solution Demo)",
+      gameTitle: "华容道游戏",
+      resetButton: "重置",
+      solveButton: "显示解决方案 (演示)",
+      congratsMessage: "恭喜过关！",
+      solutionComplete: "解决方案完成！(已到达目标状态)",
+      solutionError: "解决方案错误：在步骤 {0} 处对 {1} 的移动无效。播放已停止。"
+    },
+    en: {
+      pageTitle: "Klotski Game (With Solution Demo)",
+      gameTitle: "Klotski Game",
+      resetButton: "Reset",
+      solveButton: "Show Solution (Demo)",
+      congratsMessage: "Congratulations, you passed!",
+      solutionComplete: "Solution Complete! (Reached target state)",
+      solutionError: "Solution Error: Invalid move at step {0} for {1}. Playback stopped."
+    }
+  };
+
+  let currentLanguage = 'zh';
+
+  function changeLanguage(lang) {
+    currentLanguage = lang;
+    updateUIText(lang);
+  }
+
+  function updateUIText(lang) {
+    const texts = translations[lang];
+    document.getElementById('pageTitle').textContent = texts.pageTitle;
+    document.getElementById('gameTitle').textContent = texts.gameTitle;
+    document.getElementById('resetButton').textContent = texts.resetButton;
+    document.getElementById('solveButton').textContent = texts.solveButton;
+  }
+
+  // Override alert messages to use the correct language
+  function showAlert(messageKey, ...args) {
+    let message = translations[currentLanguage][messageKey];
+    if (args.length > 0) {
+      for (let i = 0; i < args.length; i++) {
+        message = message.replace(`{${i}}`, args[i]);
+      }
+    }
+    alert(message);
+  }
+
   // --- Initial Game Setup ---
   render(); // Draw the initial board
+  updateUIText(currentLanguage); // Set initial language
 
 </script>
 
