@@ -737,7 +737,7 @@
 
   // ——— Generate 3 new layouts far from both exit & existing ———
   function generateNewLayouts() {
-    const MAX_DEPTH = 40; // tune as you wish
+    const MAX_DEPTH = 120; // tune as you wish
     // 1) solved state
     const solved = structuredClone(layouts.classic.pieces);
     solved.find(p => p.id === "曹操").y = 3; // Move Cao Cao to solved position
