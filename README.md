@@ -123,7 +123,83 @@ function solveFromCurrentBoard() {
 
 ---
 
-## 5. Solution Playback
+## 5. BFS Iteration of Solution Space
+
+The code uses Breadth-First Search (BFS) to find a solution path for the Klotski (华容道) puzzle. BFS is a systematic way to explore all possible board configurations until finding the solution where the largest piece (Cao Cao) reaches the target position.
+
+### Main BFS Function: `solveFromCurrentBoard()`
+
+This function implements the core BFS algorithm to find the shortest path from the current board state to the solved state.
+
+1. **Initialization**:
+   - It starts with the current board state (`startPieces`) and creates a unique string representation (`startKey`) using `encodeBoardFast()`.
+   - A queue is initialized with the starting state and an empty path.
+   - A `seen` Set keeps track of visited board configurations to avoid cycles.
+   - The `head` variable tracks the current position in the queue (acting as a pointer for efficiency instead of shifting elements).
+
+2. **BFS Loop**:
+   - While there are states to process in the queue (`head < queue.length`), it dequeues the current state and its associated path.
+   - For the current state, it checks if Cao Cao is at the target position (x=1, y=3). If so, it returns the path to reach this solution.
+   - If not solved, it generates all possible next states using `nextPositionsFast()`.
+
+3. **Exploring Neighbors**:
+   - For each possible next state, it creates a unique key with `encodeBoardFast()`.
+   - If this state hasn't been seen before, it's added to the `seen` Set and enqueued with the updated path (including the move that led to this state).
+   - This ensures all possible moves are explored level by level (i.e., all states reachable in 1 move, then 2 moves, etc.), guaranteeing the shortest path.
+
+4. **Termination**:
+   - If no solution is found after exploring all reachable states, it returns `null` (though for a valid Klotski puzzle, a solution should exist).
+
+### Helper Functions Supporting BFS
+
+#### `encodeBoardFast()`
+- This function creates a compact string representation (key) of a board state.
+- It maps the 5x4 grid into a 20-character string where each position represents a cell:
+  - '.' for empty spaces
+  - 'C' for Cao Cao (2x2)
+  - 'h' for horizontal 2x1 pieces
+  - 'v' for vertical 1x2 pieces
+  - 's' for soldier 1x1 pieces
+- It also computes a mirror image (left-right flip) of the board and chooses the lexicographically smaller key to handle symmetries.
+- This key is used in the `seen` Set to efficiently detect if a state was already explored.
+
+#### `nextPositionsFast()`
+- This generator function produces all valid next states from a given board configuration.
+- It identifies the two empty spaces on the board (Klotski always has exactly 2 empty cells in a 5x4 grid with the given pieces).
+- For each empty space, it checks adjacent cells in four directions (up, down, left, right).
+- If an adjacent cell contains a piece, it attempts to move that piece into the empty space (effectively sliding it one step).
+- It ensures no duplicate moves are generated using a `alreadyTried` Set.
+- For each valid move, it creates a new state (copy of pieces with updated position) and yields it along with the move details.
+- The `canMoveTo()` function validates if a move is legal (within bounds, no overlaps, proper sliding).
+
+### Why BFS?
+- BFS guarantees the shortest path in an unweighted graph, which in this context means the minimum number of moves to solve the puzzle.
+- Each board state is a node in the graph, and each valid move creates an edge to a neighboring state.
+- By exploring states level by level, BFS ensures the first solution found is optimal in terms of move count.
+
+### Integration with Gameplay
+- When the "Show Solution" button is clicked, `startSolution()` calls `solveFromCurrentBoard()` to compute the solution path.
+- If a path is found, it's stored in `solutionSequence`, and the moves are played back step by step using `playSolutionStep()` with a 1-second delay between moves.
+- During playback, user interaction is disabled to prevent interference with the automated solution.
+
+### Additional BFS Usage: `multiBFSWithStates()`
+- This is an extended BFS variant used for generating new layouts in `generateNewLayouts()`.
+- It starts from multiple initial states (e.g., solved state and existing layouts) and explores up to a maximum depth.
+- It tracks distances (`dist`) and stores full state information (`stateMap`) for each explored configuration.
+- This allows scoring states based on their distance from the solved position and existing layouts to create novel, challenging puzzles.
+
+### Summary
+The BFS implementation systematically explores the solution space by:
+1. Encoding board states uniquely to track visited configurations.
+2. Generating valid neighboring states by sliding pieces into empty spaces.
+3. Using a queue to explore states in order of increasing move count.
+4. Stopping when the target state is reached, ensuring the shortest path.
+
+This approach efficiently handles the combinatorial explosion of possible board states (potentially millions) by avoiding redundant exploration and focusing on breadth-first progression.
+
+---
+
+## 6. Solution Playback
 
 `startSolution()` freezes the UI (`isSolving = true`), then schedules `playSolutionStep(0)` after a short delay.  Each step:
 
@@ -135,7 +211,7 @@ Stopping (via `stopSolution()` or reset) clears the timer, re‑enables UI, and 
 
 ---
 
-## 6. Internationalisation (i18n)
+## 7. Internationalisation (i18n)
 
 A simple `translations` object maps language code → UI strings.  `changeLanguage(lang)` rewrites:
 
@@ -148,7 +224,7 @@ Adding a new language only requires appending a dictionary.
 
 ---
 
-## 7. Running Locally
+## 8. Running Locally
 
 1. Save the HTML file as `klotski.html`.
 2. Open it in any modern desktop or mobile browser – no build step needed.
@@ -157,7 +233,7 @@ Adding a new language only requires appending a dictionary.
 
 ---
 
-## 8. Extending the Code
+## 9. Extending the Code
 
 | Task                                   | How‑to                                                                                         |
 | -------------------------------------- | ---------------------------------------------------------------------------------------------- |
@@ -168,7 +244,7 @@ Adding a new language only requires appending a dictionary.
 
 ---
 
-## 9. License
+## 10. License
 
 This demo is released into the public domain (CC0).  Use freely in personal or commercial projects – attribution appreciated but not required.
 
