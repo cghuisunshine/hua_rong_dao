@@ -1,0 +1,913 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hua Rong Dao (华容道) — One-File Puzzle</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #0b1220;
+        --panel: rgba(255, 255, 255, 0.06);
+        --panel-2: rgba(255, 255, 255, 0.1);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.7);
+        --border: rgba(255, 255, 255, 0.14);
+        --shadow: 0 18px 55px rgba(0, 0, 0, 0.45);
+        --accent: #60a5fa;
+        --accent-2: #a78bfa;
+
+        --board-w: 4;
+        --board-h: 5;
+        --cell: clamp(56px, 9.8vmin, 90px);
+        --gap: clamp(8px, 1.5vmin, 12px);
+        --radius: 18px;
+      }
+
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #f6f7fb;
+          --panel: rgba(15, 23, 42, 0.06);
+          --panel-2: rgba(15, 23, 42, 0.1);
+          --text: rgba(15, 23, 42, 0.92);
+          --muted: rgba(15, 23, 42, 0.7);
+          --border: rgba(15, 23, 42, 0.14);
+          --shadow: 0 18px 55px rgba(2, 6, 23, 0.12);
+          --accent: #2563eb;
+          --accent-2: #6d28d9;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: radial-gradient(1200px 700px at 10% 10%, rgba(96, 165, 250, 0.25), transparent 55%),
+          radial-gradient(1000px 700px at 90% 10%, rgba(167, 139, 250, 0.18), transparent 55%),
+          var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.55;
+      }
+
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      a:visited {
+        color: var(--accent-2);
+      }
+
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 22px 14px 44px;
+        display: grid;
+        grid-template-columns: 1.05fr 1fr;
+        gap: 18px;
+        align-items: start;
+      }
+
+      @media (max-width: 980px) {
+        .wrap {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        background: linear-gradient(180deg, var(--panel), transparent 110%);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      header {
+        padding: 18px 18px 0;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        letter-spacing: 0.01em;
+      }
+
+      .sub {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 0.98rem;
+      }
+
+      .controls {
+        padding: 14px 18px 18px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .btn {
+        appearance: none;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        padding: 10px 12px;
+        border-radius: 14px;
+        cursor: pointer;
+        font-weight: 650;
+        letter-spacing: 0.01em;
+      }
+
+      .btn:hover {
+        border-color: rgba(96, 165, 250, 0.55);
+      }
+
+      .btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      .btn.primary {
+        border-color: rgba(96, 165, 250, 0.6);
+        background: linear-gradient(180deg, rgba(96, 165, 250, 0.25), rgba(96, 165, 250, 0.08));
+      }
+
+      .meta {
+        padding: 0 18px 18px;
+        color: var(--muted);
+        font-size: 0.95rem;
+        display: grid;
+        gap: 8px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.7);
+      }
+
+      .dot.ok {
+        background: rgba(34, 197, 94, 0.9);
+      }
+
+      .dot.go {
+        background: rgba(96, 165, 250, 0.95);
+      }
+
+      .dot.wait {
+        background: rgba(245, 158, 11, 0.95);
+      }
+
+      .boardShell {
+        padding: 18px;
+      }
+
+      .board {
+        position: relative;
+        width: calc(var(--cell) * var(--board-w) + var(--gap) * (var(--board-w) + 1));
+        height: calc(var(--cell) * var(--board-h) + var(--gap) * (var(--board-h) + 1));
+        margin: 0 auto;
+        padding: var(--gap);
+        border-radius: 26px;
+        border: 1px solid var(--border);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+          radial-gradient(800px 420px at 30% 20%, rgba(96, 165, 250, 0.25), transparent 60%),
+          radial-gradient(700px 420px at 70% 10%, rgba(167, 139, 250, 0.2), transparent 60%);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        user-select: none;
+        touch-action: manipulation;
+      }
+
+      .gridBackdrop {
+        position: absolute;
+        inset: var(--gap);
+        border-radius: 18px;
+        pointer-events: none;
+        background-image:
+          linear-gradient(to right, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+        background-size: calc(var(--cell) + var(--gap)) calc(var(--cell) + var(--gap));
+        background-position: 0 0;
+        opacity: 0.75;
+      }
+
+      .exit {
+        position: absolute;
+        left: calc(var(--gap) + (var(--cell) + var(--gap)) * 1);
+        bottom: -12px;
+        width: calc(var(--cell) * 2 + var(--gap));
+        height: 12px;
+        border-radius: 0 0 12px 12px;
+        background: linear-gradient(180deg, rgba(34, 197, 94, 0.85), rgba(34, 197, 94, 0.25));
+        filter: drop-shadow(0 10px 20px rgba(34, 197, 94, 0.25));
+      }
+
+      .piece {
+        position: absolute;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 16px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
+        color: var(--text);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+        display: grid;
+        place-items: center;
+        font-weight: 750;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        transition: transform 120ms ease;
+      }
+
+      .piece:hover {
+        border-color: rgba(96, 165, 250, 0.55);
+        transform: translate(var(--px), var(--py)) scale(1.01);
+      }
+
+      .piece.selected {
+        outline: 3px solid rgba(96, 165, 250, 0.65);
+        outline-offset: 2px;
+      }
+
+      .piece.cc {
+        background: linear-gradient(180deg, rgba(96, 165, 250, 0.35), rgba(96, 165, 250, 0.08));
+        border-color: rgba(96, 165, 250, 0.65);
+      }
+
+      .piece.h {
+        background: linear-gradient(180deg, rgba(167, 139, 250, 0.3), rgba(167, 139, 250, 0.07));
+      }
+
+      .piece.g {
+        background: linear-gradient(180deg, rgba(245, 158, 11, 0.26), rgba(245, 158, 11, 0.06));
+      }
+
+      .piece.s {
+        background: linear-gradient(180deg, rgba(148, 163, 184, 0.24), rgba(148, 163, 184, 0.06));
+      }
+
+      .legend {
+        padding: 16px 18px 18px;
+        border-top: 1px solid var(--border);
+        display: grid;
+        gap: 10px;
+        color: var(--muted);
+        font-size: 0.96rem;
+      }
+
+      .legend strong {
+        color: var(--text);
+      }
+
+      .kbd {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 0.92em;
+        padding: 0.16em 0.5em;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .piece {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <section class="card" aria-label="Controls">
+        <header>
+          <h1>Hua Rong Dao (华容道)</h1>
+          <p class="sub">
+            Click a piece to select, then click a neighboring empty cell to move. Goal: move <strong>Cao Cao</strong> (2×2) to the green exit.
+          </p>
+        </header>
+        <div class="controls">
+          <button class="btn primary" id="shuffleBtn" type="button">Shuffle</button>
+          <button class="btn" id="solveBtn" type="button">Solve</button>
+          <button class="btn" id="undoBtn" type="button">Undo</button>
+          <button class="btn" id="resetBtn" type="button">Reset Classic</button>
+        </div>
+        <div class="meta">
+          <div class="pill" id="statusPill"><span class="dot" id="statusDot"></span><span id="statusText">Ready.</span></div>
+          <div>Moves made: <strong id="movesMade">0</strong> · Undoable steps: <strong id="undoable">0</strong></div>
+          <div>Tip: after selecting a piece, you can also use <span class="kbd">←</span> <span class="kbd">↑</span> <span class="kbd">→</span> <span class="kbd">↓</span></div>
+        </div>
+        <div class="legend">
+          <div><strong>Shuffle</strong> creates a solvable puzzle by doing many legal random moves from the classic start.</div>
+          <div><strong>Solve</strong> searches for a solution from the current layout and animates it.</div>
+          <div><strong>Undo</strong> reverts one step (works for shuffle + your moves).</div>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Puzzle board">
+        <div class="boardShell">
+          <div class="board" id="board" role="application" aria-label="Hua Rong Dao board">
+            <div class="gridBackdrop" aria-hidden="true"></div>
+            <div class="exit" aria-hidden="true" title="Exit"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      "use strict";
+
+      const BOARD_W = 4;
+      const BOARD_H = 5;
+
+      const PIECES = [
+        { id: "CC", label: "Cao Cao", w: 2, h: 2, kind: "cc" },
+        { id: "G1", label: "General 1", w: 1, h: 2, kind: "g" },
+        { id: "G2", label: "General 2", w: 1, h: 2, kind: "g" },
+        { id: "G3", label: "General 3", w: 1, h: 2, kind: "g" },
+        { id: "G4", label: "General 4", w: 1, h: 2, kind: "g" },
+        { id: "H", label: "Horizontal", w: 2, h: 1, kind: "h" },
+        { id: "S1", label: "Soldier 1", w: 1, h: 1, kind: "s" },
+        { id: "S2", label: "Soldier 2", w: 1, h: 1, kind: "s" },
+        { id: "S3", label: "Soldier 3", w: 1, h: 1, kind: "s" },
+        { id: "S4", label: "Soldier 4", w: 1, h: 1, kind: "s" },
+      ];
+
+      const CLASSIC_START_POSITIONS = {
+        CC: { x: 1, y: 0 },
+        G1: { x: 0, y: 0 },
+        G2: { x: 3, y: 0 },
+        G3: { x: 0, y: 2 },
+        G4: { x: 3, y: 2 },
+        H: { x: 1, y: 2 },
+        S1: { x: 1, y: 3 },
+        S2: { x: 2, y: 3 },
+        S3: { x: 0, y: 4 },
+        S4: { x: 3, y: 4 },
+      };
+
+      const GOAL = { ccX: 1, ccY: 3 };
+
+      const boardEl = document.getElementById("board");
+      const shuffleBtn = document.getElementById("shuffleBtn");
+      const solveBtn = document.getElementById("solveBtn");
+      const undoBtn = document.getElementById("undoBtn");
+      const resetBtn = document.getElementById("resetBtn");
+      const statusText = document.getElementById("statusText");
+      const statusDot = document.getElementById("statusDot");
+      const movesMadeEl = document.getElementById("movesMade");
+      const undoableEl = document.getElementById("undoable");
+
+      const state = {
+        piecesById: new Map(),
+        order: [],
+        selectedId: null,
+        history: [],
+        isAnimating: false,
+        solveTimer: null,
+        solveEpoch: 0,
+      };
+
+      function setStatus(kind, text) {
+        statusText.textContent = text;
+        statusDot.classList.toggle("ok", kind === "ok");
+        statusDot.classList.toggle("go", kind === "go");
+        statusDot.classList.toggle("wait", kind === "wait");
+      }
+
+      function clonePiece(piece) {
+        return { ...piece };
+      }
+
+      function resetToClassicStart({ clearHistory } = { clearHistory: true }) {
+        state.piecesById.clear();
+        state.order = [];
+        for (const pieceDef of PIECES) {
+          const pos = CLASSIC_START_POSITIONS[pieceDef.id];
+          const piece = clonePiece(pieceDef);
+          piece.x = pos.x;
+          piece.y = pos.y;
+          state.piecesById.set(piece.id, piece);
+          state.order.push(piece.id);
+        }
+        state.selectedId = null;
+        if (clearHistory) state.history = [];
+        render();
+        updateMeta();
+        setStatus(isWin() ? "ok" : "go", isWin() ? "Solved! Cao Cao reached the exit." : "Ready.");
+      }
+
+      function cellIndex(x, y) {
+        return y * BOARD_W + x;
+      }
+
+      function buildOccupancy(excludeId = null) {
+        const occ = new Array(BOARD_W * BOARD_H).fill(null);
+        for (const id of state.order) {
+          if (excludeId && id === excludeId) continue;
+          const p = state.piecesById.get(id);
+          for (let dy = 0; dy < p.h; dy++) {
+            for (let dx = 0; dx < p.w; dx++) {
+              occ[cellIndex(p.x + dx, p.y + dy)] = id;
+            }
+          }
+        }
+        return occ;
+      }
+
+      function canMove(id, dx, dy) {
+        if (!dx && !dy) return false;
+        if (Math.abs(dx) + Math.abs(dy) !== 1) return false;
+        const p = state.piecesById.get(id);
+        const nx = p.x + dx;
+        const ny = p.y + dy;
+        if (nx < 0 || ny < 0 || nx + p.w > BOARD_W || ny + p.h > BOARD_H) return false;
+
+        const occ = buildOccupancy(id);
+        for (let yy = ny; yy < ny + p.h; yy++) {
+          for (let xx = nx; xx < nx + p.w; xx++) {
+            if (occ[cellIndex(xx, yy)] !== null) return false;
+          }
+        }
+        return true;
+      }
+
+      function applyMove(id, dx, dy, { record } = { record: true }) {
+        if (!canMove(id, dx, dy)) return false;
+        const p = state.piecesById.get(id);
+        p.x += dx;
+        p.y += dy;
+        if (record) state.history.push({ id, dx, dy });
+        render();
+        updateMeta();
+        if (isWin()) {
+          setStatus("ok", "Solved! Cao Cao reached the exit.");
+        } else if (!state.isAnimating) {
+          setStatus("go", "Ready.");
+        }
+        return true;
+      }
+
+      function isWin() {
+        const cc = state.piecesById.get("CC");
+        return cc.x === GOAL.ccX && cc.y === GOAL.ccY;
+      }
+
+      function updateMeta() {
+        movesMadeEl.textContent = String(state.history.length);
+        undoableEl.textContent = String(state.history.length);
+        const canInteract = !state.isAnimating;
+        shuffleBtn.disabled = !canInteract;
+        resetBtn.disabled = !canInteract;
+        undoBtn.disabled = !canInteract || state.history.length === 0;
+        solveBtn.disabled = false;
+        solveBtn.textContent = state.isAnimating ? "Stop" : "Solve";
+      }
+
+      function clearBoardPieces() {
+        const existing = boardEl.querySelectorAll("button.piece");
+        for (const el of existing) el.remove();
+      }
+
+      function toPixelCoord(n) {
+        const styles = getComputedStyle(document.documentElement);
+        const cell = styles.getPropertyValue("--cell").trim();
+        const gap = styles.getPropertyValue("--gap").trim();
+        return `calc(${gap} + (${cell} + ${gap}) * ${n})`;
+      }
+
+      function toSize(w, h) {
+        const cell = getComputedStyle(document.documentElement).getPropertyValue("--cell").trim();
+        const gap = getComputedStyle(document.documentElement).getPropertyValue("--gap").trim();
+        const width = `calc(${cell} * ${w} + ${gap} * (${w - 1}))`;
+        const height = `calc(${cell} * ${h} + ${gap} * (${h - 1}))`;
+        return { width, height };
+      }
+
+      function render() {
+        clearBoardPieces();
+        for (const id of state.order) {
+          const p = state.piecesById.get(id);
+          const el = document.createElement("button");
+          el.type = "button";
+          el.className = `piece ${p.kind}` + (state.selectedId === id ? " selected" : "");
+          el.dataset.id = id;
+          el.setAttribute("aria-label", `${p.label} (${p.w}×${p.h})`);
+          el.textContent = p.id === "CC" ? "Cao Cao" : p.id;
+
+          const px = toPixelCoord(p.x);
+          const py = toPixelCoord(p.y);
+          const { width, height } = toSize(p.w, p.h);
+          el.style.setProperty("--px", px);
+          el.style.setProperty("--py", py);
+          el.style.transform = `translate(${px}, ${py})`;
+          el.style.width = width;
+          el.style.height = height;
+
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (state.isAnimating) return;
+            state.selectedId = state.selectedId === id ? null : id;
+            render();
+          });
+          boardEl.appendChild(el);
+        }
+      }
+
+      function measureCssLength(value) {
+        const probe = document.createElement("div");
+        probe.style.position = "absolute";
+        probe.style.visibility = "hidden";
+        probe.style.pointerEvents = "none";
+        probe.style.width = value;
+        probe.style.height = "0";
+        document.body.appendChild(probe);
+        const px = probe.getBoundingClientRect().width;
+        probe.remove();
+        return px;
+      }
+
+      const hitTestMetrics = { cellPx: 0, gapPx: 0, stride: 0 };
+
+      function refreshHitTestMetrics() {
+        const styles = getComputedStyle(document.documentElement);
+        const cellSpec = styles.getPropertyValue("--cell").trim();
+        const gapSpec = styles.getPropertyValue("--gap").trim();
+        const cellPx = measureCssLength(cellSpec);
+        const gapPx = measureCssLength(gapSpec);
+        hitTestMetrics.cellPx = cellPx;
+        hitTestMetrics.gapPx = gapPx;
+        hitTestMetrics.stride = cellPx + gapPx;
+      }
+
+      function getBoardCellFromEvent(event) {
+        const rect = boardEl.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const { cellPx, gapPx, stride } = hitTestMetrics;
+        const innerX = x - gapPx;
+        const innerY = y - gapPx;
+        if (innerX < 0 || innerY < 0) return null;
+        const cx = Math.floor(innerX / stride);
+        const cy = Math.floor(innerY / stride);
+        if (cx < 0 || cy < 0 || cx >= BOARD_W || cy >= BOARD_H) return null;
+        const inCellX = innerX - cx * stride;
+        const inCellY = innerY - cy * stride;
+        if (inCellX > cellPx || inCellY > cellPx) return null;
+        return { x: cx, y: cy };
+      }
+
+      function directionForMoveToEmpty(piece, emptyCell) {
+        const withinY = emptyCell.y >= piece.y && emptyCell.y < piece.y + piece.h;
+        const withinX = emptyCell.x >= piece.x && emptyCell.x < piece.x + piece.w;
+
+        if (withinY && emptyCell.x === piece.x - 1) return { dx: -1, dy: 0 };
+        if (withinY && emptyCell.x === piece.x + piece.w) return { dx: 1, dy: 0 };
+        if (withinX && emptyCell.y === piece.y - 1) return { dx: 0, dy: -1 };
+        if (withinX && emptyCell.y === piece.y + piece.h) return { dx: 0, dy: 1 };
+        return null;
+      }
+
+      function shuffle({ steps } = { steps: 90 }) {
+        stopSolveAnimation();
+        resetToClassicStart({ clearHistory: true });
+        setStatus("wait", "Shuffling...");
+
+        let last = null;
+        for (let i = 0; i < steps; i++) {
+          const moves = [];
+          for (const id of state.order) {
+            for (const dir of [
+              { dx: -1, dy: 0 },
+              { dx: 1, dy: 0 },
+              { dx: 0, dy: -1 },
+              { dx: 0, dy: 1 },
+            ]) {
+              if (!canMove(id, dir.dx, dir.dy)) continue;
+              if (last && last.id === id && last.dx === -dir.dx && last.dy === -dir.dy) continue;
+              moves.push({ id, dx: dir.dx, dy: dir.dy });
+            }
+          }
+          if (moves.length === 0) break;
+          const picked = moves[Math.floor(Math.random() * moves.length)];
+          applyMove(picked.id, picked.dx, picked.dy, { record: true });
+          last = picked;
+        }
+
+        if (isWin()) {
+          const candidates = [];
+          for (const id of state.order) {
+            for (const dir of [
+              { dx: -1, dy: 0 },
+              { dx: 1, dy: 0 },
+              { dx: 0, dy: -1 },
+              { dx: 0, dy: 1 },
+            ]) {
+              if (!canMove(id, dir.dx, dir.dy)) continue;
+              candidates.push({ id, dx: dir.dx, dy: dir.dy });
+            }
+          }
+          if (candidates.length) {
+            const picked = candidates[Math.floor(Math.random() * candidates.length)];
+            applyMove(picked.id, picked.dx, picked.dy, { record: true });
+          }
+        }
+        state.selectedId = null;
+        render();
+        updateMeta();
+        setStatus("go", `Shuffled (${state.history.length} moves).`);
+      }
+
+      function stopSolveAnimation() {
+        if (state.solveTimer) {
+          clearInterval(state.solveTimer);
+          state.solveTimer = null;
+        }
+        state.isAnimating = false;
+        state.solveEpoch++;
+        updateMeta();
+      }
+
+      function buildCanonicalSolverStateFromUI() {
+        const cc = state.piecesById.get("CC");
+        const h = state.piecesById.get("H");
+        const g = [];
+        const s = [];
+        for (const id of state.order) {
+          if (id === "CC" || id === "H") continue;
+          const p = state.piecesById.get(id);
+          if (p.w === 1 && p.h === 2) g.push({ x: p.x, y: p.y });
+          else if (p.w === 1 && p.h === 1) s.push({ x: p.x, y: p.y });
+        }
+        g.sort((a, b) => a.y * BOARD_W + a.x - (b.y * BOARD_W + b.x));
+        s.sort((a, b) => a.y * BOARD_W + a.x - (b.y * BOARD_W + b.x));
+        return { cc: { x: cc.x, y: cc.y }, h: { x: h.x, y: h.y }, g, s };
+      }
+
+      function encodeSolverState(st) {
+        const parts = [];
+        parts.push(`C${st.cc.x}${st.cc.y}`);
+        parts.push(`H${st.h.x}${st.h.y}`);
+        for (const p of st.g) parts.push(`G${p.x}${p.y}`);
+        for (const p of st.s) parts.push(`S${p.x}${p.y}`);
+        return parts.join("");
+      }
+
+      function isWinSolverState(st) {
+        return st.cc.x === GOAL.ccX && st.cc.y === GOAL.ccY;
+      }
+
+      function buildOccForSolverState(st) {
+        const occ = new Array(BOARD_W * BOARD_H).fill(null);
+        const place = (token, x, y, w, h) => {
+          for (let dy = 0; dy < h; dy++) {
+            for (let dx = 0; dx < w; dx++) {
+              occ[cellIndex(x + dx, y + dy)] = token;
+            }
+          }
+        };
+        place("CC", st.cc.x, st.cc.y, 2, 2);
+        place("H", st.h.x, st.h.y, 2, 1);
+        st.g.forEach((p, i) => place(`G${i}`, p.x, p.y, 1, 2));
+        st.s.forEach((p, i) => place(`S${i}`, p.x, p.y, 1, 1));
+        return occ;
+      }
+
+      function canMoveRect(token, x, y, w, h, dx, dy, occ) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx < 0 || ny < 0 || nx + w > BOARD_W || ny + h > BOARD_H) return false;
+        for (let yy = ny; yy < ny + h; yy++) {
+          for (let xx = nx; xx < nx + w; xx++) {
+            const cell = occ[cellIndex(xx, yy)];
+            if (cell !== null && cell !== token) return false;
+          }
+        }
+        return true;
+      }
+
+      function normalizeSolverState(st) {
+        st.g.sort((a, b) => a.y * BOARD_W + a.x - (b.y * BOARD_W + b.x));
+        st.s.sort((a, b) => a.y * BOARD_W + a.x - (b.y * BOARD_W + b.x));
+        return st;
+      }
+
+      function nextSolverState(st, piece, dx, dy) {
+        const next = {
+          cc: { ...st.cc },
+          h: { ...st.h },
+          g: st.g.map((p) => ({ ...p })),
+          s: st.s.map((p) => ({ ...p })),
+        };
+        if (piece.kind === "cc") {
+          next.cc.x += dx;
+          next.cc.y += dy;
+        } else if (piece.kind === "h") {
+          next.h.x += dx;
+          next.h.y += dy;
+        } else if (piece.kind === "g") {
+          next.g[piece.index].x += dx;
+          next.g[piece.index].y += dy;
+        } else if (piece.kind === "s") {
+          next.s[piece.index].x += dx;
+          next.s[piece.index].y += dy;
+        }
+        return normalizeSolverState(next);
+      }
+
+      function findUIStepPieceId(step) {
+        for (const id of state.order) {
+          const p = state.piecesById.get(id);
+          if (p.x === step.x && p.y === step.y && p.w === step.w && p.h === step.h) return id;
+        }
+        return null;
+      }
+
+      function solveWithBFS(startState) {
+        const startKey = encodeSolverState(startState);
+        if (isWinSolverState(startState)) return { steps: [], explored: 0 };
+
+        const visited = new Set([startKey]);
+        const parent = new Map();
+        parent.set(startKey, null);
+
+        const queue = [{ st: startState, key: startKey }];
+        let head = 0;
+        const MAX_STATES = 250_000;
+
+        while (head < queue.length) {
+          if (visited.size > MAX_STATES) break;
+          const { st, key } = queue[head++];
+          const occ = buildOccForSolverState(st);
+
+          const pieces = [
+            { kind: "cc", token: "CC", x: st.cc.x, y: st.cc.y, w: 2, h: 2 },
+            { kind: "h", token: "H", x: st.h.x, y: st.h.y, w: 2, h: 1 },
+            ...st.g.map((p, i) => ({ kind: "g", index: i, token: `G${i}`, x: p.x, y: p.y, w: 1, h: 2 })),
+            ...st.s.map((p, i) => ({ kind: "s", index: i, token: `S${i}`, x: p.x, y: p.y, w: 1, h: 1 })),
+          ];
+
+          for (const piece of pieces) {
+            for (const dir of [
+              { dx: -1, dy: 0 },
+              { dx: 1, dy: 0 },
+              { dx: 0, dy: -1 },
+              { dx: 0, dy: 1 },
+            ]) {
+              if (!canMoveRect(piece.token, piece.x, piece.y, piece.w, piece.h, dir.dx, dir.dy, occ)) continue;
+              const next = nextSolverState(st, piece, dir.dx, dir.dy);
+              const nextKey = encodeSolverState(next);
+              if (visited.has(nextKey)) continue;
+              visited.add(nextKey);
+              parent.set(nextKey, {
+                prevKey: key,
+                move: { x: piece.x, y: piece.y, w: piece.w, h: piece.h, dx: dir.dx, dy: dir.dy },
+              });
+              if (isWinSolverState(next)) {
+                const steps = [];
+                let curKey = nextKey;
+                while (curKey !== startKey) {
+                  const info = parent.get(curKey);
+                  steps.push(info.move);
+                  curKey = info.prevKey;
+                }
+                steps.reverse();
+                return { steps, explored: visited.size };
+              }
+              queue.push({ st: next, key: nextKey });
+            }
+          }
+        }
+        return { steps: null, explored: visited.size };
+      }
+
+      function solveToExit() {
+        if (state.isAnimating) return;
+        stopSolveAnimation();
+        state.selectedId = null;
+        render();
+        setStatus("wait", "Computing solution…");
+        state.isAnimating = true;
+        updateMeta();
+        const epoch = ++state.solveEpoch;
+
+        setTimeout(() => {
+          if (!state.isAnimating || epoch !== state.solveEpoch) return;
+          const start = buildCanonicalSolverStateFromUI();
+          const { steps, explored } = solveWithBFS(start);
+          if (!state.isAnimating || epoch !== state.solveEpoch) return;
+          if (!steps) {
+            stopSolveAnimation();
+            setStatus("go", `No solution found within limit (searched ${explored} states). Try Shuffle.`);
+            return;
+          }
+          if (steps.length === 0) {
+            stopSolveAnimation();
+            setStatus("ok", "Already solved!");
+            return;
+          }
+
+          setStatus("wait", `Solving… (${steps.length} moves)`);
+          let idx = 0;
+          state.solveTimer = setInterval(() => {
+            if (!state.isAnimating || epoch !== state.solveEpoch) return;
+            if (idx >= steps.length) {
+              stopSolveAnimation();
+              setStatus(isWin() ? "ok" : "go", isWin() ? "Solved! Cao Cao reached the exit." : "Done.");
+              return;
+            }
+            const step = steps[idx++];
+            const id = findUIStepPieceId(step);
+            if (!id) {
+              stopSolveAnimation();
+              setStatus("go", "Solve stopped (piece mismatch). Try Shuffle again.");
+              return;
+            }
+            const ok = applyMove(id, step.dx, step.dy, { record: true });
+            if (!ok) {
+              stopSolveAnimation();
+              setStatus("go", "Solve stopped (unexpected invalid move). Try Shuffle again.");
+              return;
+            }
+            setStatus("wait", `Solving… (${steps.length - idx} remaining)`);
+          }, 180);
+        }, 30);
+      }
+
+      function undoOne() {
+        if (state.isAnimating) return;
+        const last = state.history.pop();
+        if (!last) return;
+        applyMove(last.id, -last.dx, -last.dy, { record: false });
+        updateMeta();
+      }
+
+      boardEl.addEventListener("click", (e) => {
+        if (state.isAnimating) return;
+        const cell = getBoardCellFromEvent(e);
+        if (!cell) return;
+        if (!state.selectedId) return;
+
+        const occ = buildOccupancy();
+        if (occ[cellIndex(cell.x, cell.y)] !== null) return;
+
+        const piece = state.piecesById.get(state.selectedId);
+        const dir = directionForMoveToEmpty(piece, cell);
+        if (!dir) return;
+        applyMove(piece.id, dir.dx, dir.dy, { record: true });
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (state.isAnimating) return;
+        if (!state.selectedId) return;
+        const key = e.key;
+        const dir =
+          key === "ArrowLeft"
+            ? { dx: -1, dy: 0 }
+            : key === "ArrowRight"
+              ? { dx: 1, dy: 0 }
+              : key === "ArrowUp"
+                ? { dx: 0, dy: -1 }
+                : key === "ArrowDown"
+                  ? { dx: 0, dy: 1 }
+                  : null;
+        if (!dir) return;
+        e.preventDefault();
+        applyMove(state.selectedId, dir.dx, dir.dy, { record: true });
+      });
+
+      shuffleBtn.addEventListener("click", () => shuffle({ steps: 110 }));
+      solveBtn.addEventListener("click", () => {
+        if (state.isAnimating) {
+          stopSolveAnimation();
+          setStatus(isWin() ? "ok" : "go", isWin() ? "Solved! Cao Cao reached the exit." : "Stopped.");
+          return;
+        }
+        solveToExit();
+      });
+      undoBtn.addEventListener("click", () => undoOne());
+      resetBtn.addEventListener("click", () => {
+        stopSolveAnimation();
+        resetToClassicStart({ clearHistory: true });
+      });
+
+      window.addEventListener("resize", () => refreshHitTestMetrics(), { passive: true });
+
+      resetToClassicStart({ clearHistory: true });
+      refreshHitTestMetrics();
+      updateMeta();
+    </script>
+  </body>
+</html>
