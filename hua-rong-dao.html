@@ -474,7 +474,7 @@
         resetBtn.disabled = !canInteract;
         undoBtn.disabled = !canInteract || state.history.length === 0;
         solveBtn.disabled = false;
-        solveBtn.textContent = state.isAnimating ? "Stop" : "Solve";
+        solveBtn.textContent = state.isAnimating ? "Pause" : "Solve";
       }
 
       function clearBoardPieces() {
@@ -893,7 +893,7 @@
       solveBtn.addEventListener("click", () => {
         if (state.isAnimating) {
           stopSolveAnimation();
-          setStatus(isWin() ? "ok" : "go", isWin() ? "Solved! Cao Cao reached the exit." : "Stopped.");
+          setStatus(isWin() ? "ok" : "go", isWin() ? "Solved! Cao Cao reached the exit." : "Paused.");
           return;
         }
         solveToExit();
