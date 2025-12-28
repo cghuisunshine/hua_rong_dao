@@ -331,6 +331,7 @@
 
       const BOARD_W = 4;
       const BOARD_H = 5;
+      const SOLVE_STEP_MS = 540;
 
       const PIECES = [
         { id: "CC", label: "Cao Cao", w: 2, h: 2, kind: "cc" },
@@ -842,7 +843,7 @@
               return;
             }
             setStatus("wait", `Solving… (${steps.length - idx} remaining)`);
-          }, 180);
+          }, SOLVE_STEP_MS);
         }, 30);
       }
 
